@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../packages/shared-types" },
+    { "path": "../../packages/logger" },
+    { "path": "../../packages/errors" },
+    { "path": "../../packages/validation" },
+    { "path": "../../packages/database" },
+    { "path": "../../packages/event-bus" },
+    { "path": "../../packages/ai-client" }
+  ]
+}

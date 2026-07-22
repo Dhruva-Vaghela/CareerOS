@@ -1,0 +1,41 @@
+{
+  "name": "@careeros/auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:migrate": "drizzle-kit push:pg",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@careeros/ai-client": "*",
+    "@careeros/database": "*",
+    "@careeros/errors": "*",
+    "@careeros/event-bus": "*",
+    "@careeros/logger": "*",
+    "@careeros/shared-types": "*",
+    "@careeros/validation": "*",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.30.10",
+    "express": "^4.19.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/pg": "^8.11.6",
+    "@types/supertest": "^7.2.1",
+    "drizzle-kit": "^0.20.17",
+    "supertest": "^7.2.2"
+  }
+}
