@@ -5,6 +5,38 @@ export var UserStatus;
     UserStatus["INACTIVE"] = "INACTIVE";
     UserStatus["DEACTIVATED"] = "DEACTIVATED";
 })(UserStatus || (UserStatus = {}));
+export var CurrentStatus;
+(function (CurrentStatus) {
+    CurrentStatus["STUDENT"] = "STUDENT";
+    CurrentStatus["WORKING_PROFESSIONAL"] = "WORKING_PROFESSIONAL";
+    CurrentStatus["JOB_SEEKER"] = "JOB_SEEKER";
+    CurrentStatus["CAREER_SWITCHER"] = "CAREER_SWITCHER";
+})(CurrentStatus || (CurrentStatus = {}));
+export var ExperienceLevel;
+(function (ExperienceLevel) {
+    ExperienceLevel["BEGINNER"] = "BEGINNER";
+    ExperienceLevel["INTERMEDIATE"] = "INTERMEDIATE";
+    ExperienceLevel["ADVANCED"] = "ADVANCED";
+    ExperienceLevel["PROFESSIONAL"] = "PROFESSIONAL";
+})(ExperienceLevel || (ExperienceLevel = {}));
+export var TargetJobRole;
+(function (TargetJobRole) {
+    TargetJobRole["SOFTWARE_ENGINEER"] = "Software Engineer";
+    TargetJobRole["AI_ENGINEER"] = "AI Engineer";
+    TargetJobRole["ML_ENGINEER"] = "Machine Learning Engineer";
+    TargetJobRole["DATA_SCIENTIST"] = "Data Scientist";
+    TargetJobRole["DATA_ANALYST"] = "Data Analyst";
+    TargetJobRole["BACKEND_DEVELOPER"] = "Backend Developer";
+    TargetJobRole["FRONTEND_DEVELOPER"] = "Frontend Developer";
+    TargetJobRole["FULL_STACK_DEVELOPER"] = "Full Stack Developer";
+    TargetJobRole["DEVOPS_ENGINEER"] = "DevOps Engineer";
+    TargetJobRole["CLOUD_ENGINEER"] = "Cloud Engineer";
+    TargetJobRole["CYBERSECURITY_ANALYST"] = "Cybersecurity Analyst";
+    TargetJobRole["PRODUCT_MANAGER"] = "Product Manager";
+    TargetJobRole["UI_UX_DESIGNER"] = "UI/UX Designer";
+    TargetJobRole["BUSINESS_ANALYST"] = "Business Analyst";
+    TargetJobRole["OTHER"] = "Other";
+})(TargetJobRole || (TargetJobRole = {}));
 export var CareerGoalStatus;
 (function (CareerGoalStatus) {
     CareerGoalStatus["ACTIVE"] = "ACTIVE";

@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { CurrentStatus, ExperienceLevel } from '@careeros/shared-types';
 
 // Profile service owns its own schema — per architecture doc §20.4:
@@ -35,7 +36,7 @@ export const profiles = profileSchema.table('profiles', {
   experienceLevel: varchar('experience_level', { length: 50 })
     .$type<ExperienceLevel>(),
   // Stored as PostgreSQL text array
-  interests: text('interests').array().notNull().default([]),
+  interests: text('interests').array().notNull().default(sql`'{}'::text[]`),
   profileCompleted: boolean('profile_completed').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

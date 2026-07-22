@@ -18,13 +18,53 @@ export interface Session {
     expiresAt: Date;
     refreshTokenHash: string;
 }
+export declare enum CurrentStatus {
+    STUDENT = "STUDENT",
+    WORKING_PROFESSIONAL = "WORKING_PROFESSIONAL",
+    JOB_SEEKER = "JOB_SEEKER",
+    CAREER_SWITCHER = "CAREER_SWITCHER"
+}
+export declare enum ExperienceLevel {
+    BEGINNER = "BEGINNER",
+    INTERMEDIATE = "INTERMEDIATE",
+    ADVANCED = "ADVANCED",
+    PROFESSIONAL = "PROFESSIONAL"
+}
+export declare enum TargetJobRole {
+    SOFTWARE_ENGINEER = "Software Engineer",
+    AI_ENGINEER = "AI Engineer",
+    ML_ENGINEER = "Machine Learning Engineer",
+    DATA_SCIENTIST = "Data Scientist",
+    DATA_ANALYST = "Data Analyst",
+    BACKEND_DEVELOPER = "Backend Developer",
+    FRONTEND_DEVELOPER = "Frontend Developer",
+    FULL_STACK_DEVELOPER = "Full Stack Developer",
+    DEVOPS_ENGINEER = "DevOps Engineer",
+    CLOUD_ENGINEER = "Cloud Engineer",
+    CYBERSECURITY_ANALYST = "Cybersecurity Analyst",
+    PRODUCT_MANAGER = "Product Manager",
+    UI_UX_DESIGNER = "UI/UX Designer",
+    BUSINESS_ANALYST = "Business Analyst",
+    OTHER = "Other"
+}
 export interface Profile {
     userId: string;
-    name: string;
-    educationBranch: string;
-    educationYear: number;
+    fullName: string;
+    profilePictureUrl?: string;
+    country?: string;
+    timezone?: string;
+    preferredLanguage: string;
+    college?: string;
+    degree?: string;
+    branch?: string;
+    currentSemester?: number;
+    graduationYear?: number;
+    currentStatus?: CurrentStatus;
     targetRole: string;
+    experienceLevel?: ExperienceLevel;
     interests: string[];
+    profileCompleted: boolean;
+    createdAt: Date;
     updatedAt: Date;
 }
 export declare enum CareerGoalStatus {
