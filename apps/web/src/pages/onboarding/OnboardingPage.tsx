@@ -12,7 +12,7 @@ import './OnboardingPage.css';
 const STEPS = [
   { id: 1, title: 'Personal Info', subtitle: 'Basic profile details' },
   { id: 2, title: 'Education', subtitle: 'Academic background' },
-  { id: 3, title: 'Career Path', subtitle: 'Target role & experience' },
+  { id: 3, title: 'Career & Availability', subtitle: 'Target role & time commitment' },
 ];
 
 const TARGET_ROLES = [
@@ -47,6 +47,11 @@ const EXPERIENCE_LEVELS = [
   { label: 'Professional', value: 'PROFESSIONAL' },
 ];
 
+const TIMEFRAME_OPTIONS = [
+  { label: 'Hours per day', value: 'PER_DAY' },
+  { label: 'Hours per week', value: 'PER_WEEK' },
+];
+
 const LANGUAGES = [
   { label: 'English', value: 'en' },
   { label: 'Spanish', value: 'es' },
@@ -67,6 +72,7 @@ export function OnboardingPage() {
   // Form State
   const [fullName, setFullName] = useState('');
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [country, setCountry] = useState('');
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
   const [preferredLanguage, setPreferredLanguage] = useState('en');
@@ -81,6 +87,32 @@ export function OnboardingPage() {
   const [targetRole, setTargetRole] = useState('');
   const [customTargetRole, setCustomTargetRole] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
+  const [availabilityHours, setAvailabilityHours] = useState<string>('');
+  const [availabilityTimeframe, setAvailabilityTimeframe] = useState<'PER_DAY' | 'PER_WEEK'>('PER_DAY');
+
+  // Handle file selection with strict image extension checks
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+
+    if (!allowedExtensions.includes(fileExtension) || !file.type.startsWith('image/')) {
+      setError('Invalid file format. Only image extensions (.png, .jpg, .jpeg, .webp, .gif) are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setProfilePictureUrl(base64String);
+      setImagePreview(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Step 1 Validation
   const validateStep1 = () => {
@@ -102,9 +134,19 @@ export function OnboardingPage() {
   const validateStep3 = () => {
     const selectedRole = targetRole === 'Other' ? customTargetRole : targetRole;
     if (!selectedRole.trim()) {
-      setError('Target Job Role is required to personalize your CareerOS experience');
+      setError('Target Job Role is required. Please select or specify your role.');
       return false;
     }
+
+    if (availabilityHours) {
+      const hoursNum = parseInt(availabilityHours, 10);
+      const maxHours = availabilityTimeframe === 'PER_DAY' ? 24 : 168;
+      if (isNaN(hoursNum) || hoursNum < 1 || hoursNum > maxHours) {
+        setError(`Availability hours must be between 1 and ${maxHours} for ${availabilityTimeframe === 'PER_DAY' ? 'per day' : 'per week'}`);
+        return false;
+      }
+    }
+
     setError('');
     return true;
   };
@@ -135,7 +177,7 @@ export function OnboardingPage() {
 
     const payload = {
       fullName: fullName.trim(),
-      profilePictureUrl: profilePictureUrl.trim() || undefined,
+      profilePictureUrl: profilePictureUrl || undefined,
       country: country.trim() || undefined,
       timezone: timezone.trim() || undefined,
       preferredLanguage: preferredLanguage || 'en',
@@ -147,6 +189,8 @@ export function OnboardingPage() {
       currentStatus: currentStatus || undefined,
       targetRole: finalTargetRole,
       experienceLevel: experienceLevel || undefined,
+      availabilityHours: availabilityHours ? parseInt(availabilityHours, 10) : undefined,
+      availabilityTimeframe: availabilityHours ? availabilityTimeframe : undefined,
     };
 
     try {
@@ -207,6 +251,30 @@ export function OnboardingPage() {
                 />
               </div>
 
+              {/* Profile Picture Upload - Image files only */}
+              <div className="form-group form-grid-full">
+                <label className="form-label">Profile Picture (Image File Only)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                  <div className="avatar-preview-box">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Avatar Preview" className="avatar-img" />
+                    ) : (
+                      <span className="avatar-placeholder">No image</span>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
+                    onChange={handleFileChange}
+                    className="form-input"
+                    style={{ padding: '0.5rem' }}
+                  />
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem', display: 'block' }}>
+                  Allowed image formats: PNG, JPG, JPEG, WEBP, GIF
+                </span>
+              </div>
+
               <Input
                 label="Country"
                 type="text"
@@ -223,20 +291,14 @@ export function OnboardingPage() {
                 placeholder="e.g. America/New_York"
               />
 
-              <Select
-                label="Preferred Language"
-                value={preferredLanguage}
-                onChange={(e) => setPreferredLanguage(e.target.value)}
-                options={LANGUAGES}
-              />
-
-              <Input
-                label="Profile Picture URL (Optional)"
-                type="url"
-                value={profilePictureUrl}
-                onChange={(e) => setProfilePictureUrl(e.target.value)}
-                placeholder="https://example.com/avatar.jpg"
-              />
+              <div className="form-grid-full">
+                <Select
+                  label="Preferred Language"
+                  value={preferredLanguage}
+                  onChange={(e) => setPreferredLanguage(e.target.value)}
+                  options={LANGUAGES}
+                />
+              </div>
             </div>
           )}
 
@@ -301,7 +363,7 @@ export function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 3: Career Information */}
+          {/* STEP 3: Career & Availability Information */}
           {currentStep === 3 && (
             <div className="form-grid">
               <div className="form-grid-full">
@@ -314,6 +376,7 @@ export function OnboardingPage() {
                 />
               </div>
 
+              {/* Other option: allow writing custom target role */}
               {targetRole === 'Other' && (
                 <div className="form-grid-full">
                   <Input
@@ -321,7 +384,7 @@ export function OnboardingPage() {
                     type="text"
                     value={customTargetRole}
                     onChange={(e) => setCustomTargetRole(e.target.value)}
-                    placeholder="e.g. Blockchain Developer, Robotics Engineer"
+                    placeholder="Type your custom target role..."
                     required
                   />
                 </div>
@@ -336,6 +399,24 @@ export function OnboardingPage() {
                   placeholder="Select your current experience level..."
                 />
               </div>
+
+              {/* Availability Hours & Timeframe Selector (2 Options) */}
+              <Input
+                label="Availability Hours"
+                type="number"
+                min="1"
+                max={availabilityTimeframe === 'PER_DAY' ? 24 : 168}
+                value={availabilityHours}
+                onChange={(e) => setAvailabilityHours(e.target.value)}
+                placeholder={availabilityTimeframe === 'PER_DAY' ? 'e.g. 4 hours/day' : 'e.g. 20 hours/week'}
+              />
+
+              <Select
+                label="Availability Timeframe Mode"
+                value={availabilityTimeframe}
+                onChange={(e) => setAvailabilityTimeframe(e.target.value as 'PER_DAY' | 'PER_WEEK')}
+                options={TIMEFRAME_OPTIONS}
+              />
             </div>
           )}
 

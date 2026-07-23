@@ -40,6 +40,11 @@ const EXPERIENCE_LEVELS = [
   { label: 'Professional', value: 'PROFESSIONAL' },
 ];
 
+const TIMEFRAME_OPTIONS = [
+  { label: 'Hours per day', value: 'PER_DAY' },
+  { label: 'Hours per week', value: 'PER_WEEK' },
+];
+
 const LANGUAGES = [
   { label: 'English', value: 'en' },
   { label: 'Spanish', value: 'es' },
@@ -60,6 +65,7 @@ export function EditProfilePage() {
   // Form State initialized from current profile
   const [fullName, setFullName] = useState(profile?.fullName || '');
   const [profilePictureUrl, setProfilePictureUrl] = useState(profile?.profilePictureUrl || '');
+  const [imagePreview, setImagePreview] = useState<string | null>(profile?.profilePictureUrl || null);
   const [country, setCountry] = useState(profile?.country || '');
   const [timezone, setTimezone] = useState(profile?.timezone || '');
   const [preferredLanguage, setPreferredLanguage] = useState(profile?.preferredLanguage || 'en');
@@ -75,11 +81,14 @@ export function EditProfilePage() {
   const [targetRole, setTargetRole] = useState(knownRole ? profile?.targetRole || '' : 'Other');
   const [customTargetRole, setCustomTargetRole] = useState(!knownRole ? profile?.targetRole || '' : '');
   const [experienceLevel, setExperienceLevel] = useState(profile?.experienceLevel || '');
+  const [availabilityHours, setAvailabilityHours] = useState(profile?.availabilityHours ? String(profile.availabilityHours) : '');
+  const [availabilityTimeframe, setAvailabilityTimeframe] = useState<'PER_DAY' | 'PER_WEEK'>(profile?.availabilityTimeframe || 'PER_DAY');
 
   useEffect(() => {
     if (profile) {
       setFullName(profile.fullName || '');
       setProfilePictureUrl(profile.profilePictureUrl || '');
+      setImagePreview(profile.profilePictureUrl || null);
       setCountry(profile.country || '');
       setTimezone(profile.timezone || '');
       setPreferredLanguage(profile.preferredLanguage || 'en');
@@ -95,8 +104,33 @@ export function EditProfilePage() {
       setTargetRole(isKnown ? profile.targetRole : 'Other');
       setCustomTargetRole(!isKnown ? profile.targetRole : '');
       setExperienceLevel(profile.experienceLevel || '');
+      setAvailabilityHours(profile.availabilityHours ? String(profile.availabilityHours) : '');
+      setAvailabilityTimeframe(profile.availabilityTimeframe || 'PER_DAY');
     }
   }, [profile]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+
+    if (!allowedExtensions.includes(fileExtension) || !file.type.startsWith('image/')) {
+      setError('Invalid file format. Only image extensions (.png, .jpg, .jpeg, .webp, .gif) are allowed.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setProfilePictureUrl(base64String);
+      setImagePreview(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,11 +148,20 @@ export function EditProfilePage() {
       return;
     }
 
+    if (availabilityHours) {
+      const hoursNum = parseInt(availabilityHours, 10);
+      const maxHours = availabilityTimeframe === 'PER_DAY' ? 24 : 168;
+      if (isNaN(hoursNum) || hoursNum < 1 || hoursNum > maxHours) {
+        setError(`Availability hours must be between 1 and ${maxHours} for ${availabilityTimeframe === 'PER_DAY' ? 'per day' : 'per week'}`);
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     const payload = {
       fullName: fullName.trim(),
-      profilePictureUrl: profilePictureUrl.trim() || null,
+      profilePictureUrl: profilePictureUrl || null,
       country: country.trim() || null,
       timezone: timezone.trim() || null,
       preferredLanguage: preferredLanguage || 'en',
@@ -130,6 +173,8 @@ export function EditProfilePage() {
       currentStatus: currentStatus || null,
       targetRole: finalTargetRole,
       experienceLevel: experienceLevel || null,
+      availabilityHours: availabilityHours ? parseInt(availabilityHours, 10) : null,
+      availabilityTimeframe: availabilityHours ? availabilityTimeframe : null,
     };
 
     try {
@@ -208,6 +253,31 @@ export function EditProfilePage() {
                 required
               />
             </div>
+
+            {/* Profile Picture Upload - Image files only */}
+            <div className="form-group form-grid-full">
+              <label className="form-label">Profile Picture (Image File Only)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
+                <div className="avatar-preview-box">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Avatar Preview" className="avatar-img" />
+                  ) : (
+                    <span className="avatar-placeholder">No image</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
+                  onChange={handleFileChange}
+                  className="form-input"
+                  style={{ padding: '0.5rem' }}
+                />
+              </div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem', display: 'block' }}>
+                Allowed image formats: PNG, JPG, JPEG, WEBP, GIF
+              </span>
+            </div>
+
             <Input
               label="Country"
               type="text"
@@ -220,18 +290,14 @@ export function EditProfilePage() {
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
             />
-            <Select
-              label="Preferred Language"
-              value={preferredLanguage}
-              onChange={(e) => setPreferredLanguage(e.target.value)}
-              options={LANGUAGES}
-            />
-            <Input
-              label="Profile Picture URL"
-              type="url"
-              value={profilePictureUrl}
-              onChange={(e) => setProfilePictureUrl(e.target.value)}
-            />
+            <div className="form-grid-full">
+              <Select
+                label="Preferred Language"
+                value={preferredLanguage}
+                onChange={(e) => setPreferredLanguage(e.target.value)}
+                options={LANGUAGES}
+              />
+            </div>
           </div>
 
           {/* Section: Education */}
@@ -282,9 +348,9 @@ export function EditProfilePage() {
             </div>
           </div>
 
-          {/* Section: Target Role */}
+          {/* Section: Target Role & Availability */}
           <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-primary)', marginBottom: '1rem' }}>
-            Career Goals & Personalization
+            Career Goals & Availability
           </h2>
           <div className="form-grid" style={{ marginBottom: '2rem' }}>
             <div className="form-grid-full">
@@ -303,6 +369,7 @@ export function EditProfilePage() {
                   type="text"
                   value={customTargetRole}
                   onChange={(e) => setCustomTargetRole(e.target.value)}
+                  placeholder="Type your custom target role..."
                   required
                 />
               </div>
@@ -317,6 +384,24 @@ export function EditProfilePage() {
                 placeholder="Select experience level..."
               />
             </div>
+
+            {/* Availability Hours & Timeframe Selector (2 Options) */}
+            <Input
+              label="Availability Hours"
+              type="number"
+              min="1"
+              max={availabilityTimeframe === 'PER_DAY' ? 24 : 168}
+              value={availabilityHours}
+              onChange={(e) => setAvailabilityHours(e.target.value)}
+              placeholder={availabilityTimeframe === 'PER_DAY' ? 'e.g. 4 hours/day' : 'e.g. 20 hours/week'}
+            />
+
+            <Select
+              label="Availability Timeframe Mode"
+              value={availabilityTimeframe}
+              onChange={(e) => setAvailabilityTimeframe(e.target.value as 'PER_DAY' | 'PER_WEEK')}
+              options={TIMEFRAME_OPTIONS}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>

@@ -55,6 +55,11 @@ export enum TargetJobRole {
   OTHER = 'Other',
 }
 
+export enum AvailabilityTimeframe {
+  PER_DAY = 'PER_DAY',
+  PER_WEEK = 'PER_WEEK',
+}
+
 // Profile domain model — extends architecture doc §6.5 with additional
 // personal/professional context fields per §6.1 ("static and semi-static
 // personal/professional context"). Original fields mapped:
@@ -74,6 +79,8 @@ export interface Profile {
   currentStatus?: CurrentStatus;
   targetRole: string;
   experienceLevel?: ExperienceLevel;
+  availabilityHours?: number;
+  availabilityTimeframe?: AvailabilityTimeframe;
   interests: string[];
   profileCompleted: boolean;
   createdAt: Date;

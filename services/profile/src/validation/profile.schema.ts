@@ -1,15 +1,17 @@
 import { z } from 'zod';
-import { CurrentStatus, ExperienceLevel, TargetJobRole } from '@careeros/shared-types';
+import { CurrentStatus, ExperienceLevel, TargetJobRole, AvailabilityTimeframe } from '@careeros/shared-types';
 
 // All known target roles — used for validation suggestions, but also allows custom "Other" values
 const targetJobRoleValues = Object.values(TargetJobRole) as [string, ...string[]];
 const currentStatusValues = Object.values(CurrentStatus) as [string, ...string[]];
 const experienceLevelValues = Object.values(ExperienceLevel) as [string, ...string[]];
+const availabilityTimeframeValues = Object.values(AvailabilityTimeframe) as [string, ...string[]];
 
 // Schema for creating/completing a profile during onboarding (PUT /profile)
 export const createProfileSchema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(255),
-  profilePictureUrl: z.string().url('Invalid URL').optional().nullable(),
+  // Accept base64 Data URLs or standard image URLs for avatar
+  profilePictureUrl: z.string().optional().nullable(),
   country: z.string().max(100).optional().nullable(),
   timezone: z.string().max(100).optional().nullable(),
   preferredLanguage: z.string().max(50).default('en'),
@@ -22,13 +24,15 @@ export const createProfileSchema = z.object({
   // targetRole is required — primary personalization input for all downstream modules
   targetRole: z.string().min(1, 'Target job role is required').max(255),
   experienceLevel: z.enum(experienceLevelValues).optional().nullable(),
+  availabilityHours: z.number().int().min(1).max(168).optional().nullable(),
+  availabilityTimeframe: z.enum(availabilityTimeframeValues).optional().nullable(),
   interests: z.array(z.string().max(100)).max(20).default([]),
 });
 
 // Schema for partial profile updates (PATCH /profile)
 export const updateProfileSchema = z.object({
   fullName: z.string().min(1, 'Full name cannot be empty').max(255).optional(),
-  profilePictureUrl: z.string().url('Invalid URL').optional().nullable(),
+  profilePictureUrl: z.string().optional().nullable(),
   country: z.string().max(100).optional().nullable(),
   timezone: z.string().max(100).optional().nullable(),
   preferredLanguage: z.string().max(50).optional(),
@@ -40,6 +44,8 @@ export const updateProfileSchema = z.object({
   currentStatus: z.enum(currentStatusValues).optional().nullable(),
   targetRole: z.string().min(1, 'Target job role cannot be empty').max(255).optional(),
   experienceLevel: z.enum(experienceLevelValues).optional().nullable(),
+  availabilityHours: z.number().int().min(1).max(168).optional().nullable(),
+  availabilityTimeframe: z.enum(availabilityTimeframeValues).optional().nullable(),
   interests: z.array(z.string().max(100)).max(20).optional(),
 }).refine(
   (data) => Object.keys(data).length > 0,

@@ -17,6 +17,8 @@ export interface ProfileData {
   currentStatus?: string;
   targetRole: string;
   experienceLevel?: string;
+  availabilityHours?: number;
+  availabilityTimeframe?: 'PER_DAY' | 'PER_WEEK';
   interests: string[];
   profileCompleted: boolean;
   createdAt: string;

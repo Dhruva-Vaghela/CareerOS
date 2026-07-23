@@ -68,12 +68,15 @@ describe('Profile Service Integration Tests', () => {
     expect(res.body.success).toBe(false);
   });
 
-  it('should create profile during onboarding (PUT) successfully', async () => {
+  it('should create profile with custom role, availability hours (per day), and base64 avatar image', async () => {
+    const mockBase64Avatar = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
     const res = await request(app)
       .put('/api/v1/profile')
       .set('Authorization', `Bearer ${testToken}`)
       .send({
         fullName: 'Jane Doe',
+        profilePictureUrl: mockBase64Avatar,
         country: 'India',
         timezone: 'Asia/Kolkata',
         preferredLanguage: 'en',
@@ -83,15 +86,20 @@ describe('Profile Service Integration Tests', () => {
         currentSemester: 6,
         graduationYear: 2026,
         currentStatus: 'STUDENT',
-        targetRole: 'Software Engineer',
+        targetRole: 'Robotics Engineer', // Custom written role
         experienceLevel: 'INTERMEDIATE',
+        availabilityHours: 4,
+        availabilityTimeframe: 'PER_DAY',
         interests: ['System Design', 'AI'],
       });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.profile.fullName).toBe('Jane Doe');
-    expect(res.body.data.profile.targetRole).toBe('Software Engineer');
+    expect(res.body.data.profile.targetRole).toBe('Robotics Engineer');
+    expect(res.body.data.profile.profilePictureUrl).toBe(mockBase64Avatar);
+    expect(res.body.data.profile.availabilityHours).toBe(4);
+    expect(res.body.data.profile.availabilityTimeframe).toBe('PER_DAY');
     expect(res.body.data.profile.profileCompleted).toBe(true);
     expect(res.body.data.completion.isComplete).toBe(true);
   });
@@ -104,22 +112,28 @@ describe('Profile Service Integration Tests', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.profile.userId).toBe(testUserId);
-    expect(res.body.data.profile.targetRole).toBe('Software Engineer');
+    expect(res.body.data.profile.targetRole).toBe('Robotics Engineer');
+    expect(res.body.data.profile.availabilityHours).toBe(4);
+    expect(res.body.data.profile.availabilityTimeframe).toBe('PER_DAY');
   });
 
-  it('should partially update profile (PATCH) successfully', async () => {
+  it('should partially update profile (PATCH) with PER_WEEK availability hours', async () => {
     const res = await request(app)
       .patch('/api/v1/profile')
       .set('Authorization', `Bearer ${testToken}`)
       .send({
-        targetRole: 'AI Engineer',
+        targetRole: 'Quantum Engineer',
         experienceLevel: 'ADVANCED',
+        availabilityHours: 25,
+        availabilityTimeframe: 'PER_WEEK',
       });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.profile.targetRole).toBe('AI Engineer');
+    expect(res.body.data.profile.targetRole).toBe('Quantum Engineer');
     expect(res.body.data.profile.experienceLevel).toBe('ADVANCED');
+    expect(res.body.data.profile.availabilityHours).toBe(25);
+    expect(res.body.data.profile.availabilityTimeframe).toBe('PER_WEEK');
     expect(res.body.data.profile.fullName).toBe('Jane Doe');
   });
 

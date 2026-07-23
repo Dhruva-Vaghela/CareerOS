@@ -76,6 +76,8 @@ export class ProfileService {
     currentStatus?: string | null;
     targetRole: string;
     experienceLevel?: string | null;
+    availabilityHours?: number | null;
+    availabilityTimeframe?: string | null;
     interests?: string[];
   }): Promise<ProfileRow> {
     const { db } = getDb();
@@ -97,6 +99,8 @@ export class ProfileService {
       currentStatus: data.currentStatus ?? null,
       targetRole: data.targetRole,
       experienceLevel: data.experienceLevel ?? null,
+      availabilityHours: data.availabilityHours ?? null,
+      availabilityTimeframe: (data.availabilityTimeframe as any) ?? null,
       interests: data.interests ?? [],
       profileCompleted,
       updatedAt: new Date(),

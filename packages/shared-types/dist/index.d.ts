@@ -47,6 +47,10 @@ export declare enum TargetJobRole {
     BUSINESS_ANALYST = "Business Analyst",
     OTHER = "Other"
 }
+export declare enum AvailabilityTimeframe {
+    PER_DAY = "PER_DAY",
+    PER_WEEK = "PER_WEEK"
+}
 export interface Profile {
     userId: string;
     fullName: string;
@@ -62,6 +66,8 @@ export interface Profile {
     currentStatus?: CurrentStatus;
     targetRole: string;
     experienceLevel?: ExperienceLevel;
+    availabilityHours?: number;
+    availabilityTimeframe?: AvailabilityTimeframe;
     interests: string[];
     profileCompleted: boolean;
     createdAt: Date;

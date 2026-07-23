@@ -37,6 +37,11 @@ export var TargetJobRole;
     TargetJobRole["BUSINESS_ANALYST"] = "Business Analyst";
     TargetJobRole["OTHER"] = "Other";
 })(TargetJobRole || (TargetJobRole = {}));
+export var AvailabilityTimeframe;
+(function (AvailabilityTimeframe) {
+    AvailabilityTimeframe["PER_DAY"] = "PER_DAY";
+    AvailabilityTimeframe["PER_WEEK"] = "PER_WEEK";
+})(AvailabilityTimeframe || (AvailabilityTimeframe = {}));
 export var CareerGoalStatus;
 (function (CareerGoalStatus) {
     CareerGoalStatus["ACTIVE"] = "ACTIVE";

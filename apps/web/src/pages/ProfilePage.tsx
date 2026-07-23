@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../context/ProfileContext';
 import { Button } from '../components/Button';
-import { Briefcase, GraduationCap, MapPin, Globe, Award, Edit3, ArrowLeft } from 'lucide-react';
+import { Briefcase, GraduationCap, MapPin, Globe, Award, Edit3, ArrowLeft, Clock } from 'lucide-react';
 
 export function ProfilePage() {
   const { profile, completion, isLoading } = useProfile();
@@ -218,6 +218,15 @@ export function ProfilePage() {
               <span style={{ color: 'var(--color-text-secondary)' }}>Experience Level:</span>{' '}
               <strong>{profile.experienceLevel || 'Not specified'}</strong>
             </div>
+            {profile.availabilityHours && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <Clock size={16} style={{ color: 'var(--color-primary)' }} />
+                <span style={{ color: 'var(--color-text-secondary)' }}>Availability:</span>{' '}
+                <strong>
+                  {profile.availabilityHours} hours / {profile.availabilityTimeframe === 'PER_WEEK' ? 'week' : 'day'}
+                </strong>
+              </div>
+            )}
           </div>
         </div>
       </div>
