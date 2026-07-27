@@ -5,6 +5,10 @@ export interface IEventBus {
     subscribe<T extends BaseEvent>(eventName: string, handler: EventHandler<T>): Promise<void>;
     unsubscribe<T extends BaseEvent>(eventName: string, handler: EventHandler<T>): Promise<void>;
 }
+export type EventBus = IEventBus;
+export declare function createEventBus(_options?: {
+    serviceName?: string;
+}): IEventBus;
 export declare class InMemoryEventBus implements IEventBus {
     private emitter;
     constructor();

@@ -5,6 +5,9 @@ export declare class AppError extends Error {
     readonly details?: unknown;
     constructor(message: string, statusCode: number, code: string, details?: unknown);
 }
+export declare class BadRequestError extends AppError {
+    constructor(message?: string, details?: unknown);
+}
 export declare class ValidationError extends AppError {
     constructor(message: string, details?: unknown);
 }

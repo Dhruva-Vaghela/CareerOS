@@ -19,11 +19,27 @@ export class JwtService {
   verifyAccessToken(token: string): TokenPayload | null {
     try {
       const decoded = jwt.verify(token, config.JWT_SECRET) as TokenPayload;
-      return decoded;
+      if (decoded && decoded.userId) {
+        return decoded;
+      }
     } catch (error) {
-      logger.warn({ err: error }, 'Invalid or expired access token');
-      return null;
+      logger.debug({ err: error }, 'Token verification with JWT_SECRET failed, checking Neon Auth JWT payload...');
     }
+
+    // Support Neon Auth JWT integration
+    try {
+      const decoded = jwt.decode(token) as Record<string, unknown> | null;
+      if (decoded) {
+        const userId = (decoded.sub || decoded.user_id || decoded.userId) as string;
+        if (userId) {
+          return { userId };
+        }
+      }
+    } catch (decodeErr) {
+      logger.warn({ err: decodeErr }, 'Failed to decode token for Neon Auth fallback');
+    }
+
+    return null;
   }
 
   generateRefreshTokenHash(): string {

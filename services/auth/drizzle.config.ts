@@ -1,6 +1,9 @@
 import type { Config } from 'drizzle-kit';
 import * as dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export default {
   schema: './src/db/schema.ts',
@@ -8,6 +11,7 @@ export default {
   driver: 'pg',
   schemaFilter: ['auth'],
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/careeros',
+    connectionString: process.env.DATABASE_URL || '',
   },
 } satisfies Config;
+

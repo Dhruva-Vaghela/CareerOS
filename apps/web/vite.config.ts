@@ -11,6 +11,18 @@ export default defineConfig({
         target: 'http://localhost:3002',
         changeOrigin: true,
       },
+      '/api/v1/career-goals': {
+        target: 'http://localhost:3003',
+        changeOrigin: true,
+      },
+      '/api/v1/resume': {
+        target: 'http://localhost:3004',
+        changeOrigin: true,
+      },
+      '/api/v1/digital-twin': {
+        target: 'http://localhost:3005',
+        changeOrigin: true,
+      },
       '/api/v1/auth': {
         target: 'http://localhost:3001',
         changeOrigin: true,

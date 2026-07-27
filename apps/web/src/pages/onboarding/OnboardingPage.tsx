@@ -10,9 +10,10 @@ import { useProfile } from '../../context/ProfileContext';
 import './OnboardingPage.css';
 
 const STEPS = [
-  { id: 1, title: 'Personal Info', subtitle: 'Basic profile details' },
-  { id: 2, title: 'Education', subtitle: 'Academic background' },
-  { id: 3, title: 'Career & Availability', subtitle: 'Target role & time commitment' },
+  { id: 1, title: 'Basic Profile', subtitle: 'Personal & academic details' },
+  { id: 2, title: 'Career Goal & Timeline', subtitle: 'Target role & timeline (Required)' },
+  { id: 3, title: 'Target Companies', subtitle: 'Target organizations (Optional)' },
+  { id: 4, title: 'Resume Upload', subtitle: 'Upload resume (Optional)' },
 ];
 
 const TARGET_ROLES = [
@@ -33,31 +34,43 @@ const TARGET_ROLES = [
   { label: 'Other', value: 'Other' },
 ];
 
+const TIMELINE_OPTIONS = [
+  { label: '3 Months', value: '3 Months' },
+  { label: '6 Months', value: '6 Months' },
+  { label: '12 Months', value: '12 Months' },
+  { label: '18 Months', value: '18 Months' },
+  { label: '24 Months', value: '24 Months' },
+  { label: 'Custom', value: 'Custom' },
+];
+
+const COMPANY_SUGGESTIONS = [
+  'Google',
+  'Microsoft',
+  'Amazon',
+  'Meta',
+  'Apple',
+  'Netflix',
+  'Uber',
+  'Stripe',
+  'Coinbase',
+  'Snowflake',
+  'Databricks',
+  'Swiggy',
+  'Zomato',
+  'Razorpay',
+  'CRED',
+  'Flipkart',
+  'TCS',
+  'Infosys',
+  'Wipro',
+  'Accenture',
+];
+
 const CURRENT_STATUSES = [
   { label: 'Student', value: 'STUDENT' },
   { label: 'Working Professional', value: 'WORKING_PROFESSIONAL' },
   { label: 'Job Seeker', value: 'JOB_SEEKER' },
   { label: 'Career Switcher', value: 'CAREER_SWITCHER' },
-];
-
-const EXPERIENCE_LEVELS = [
-  { label: 'Beginner', value: 'BEGINNER' },
-  { label: 'Intermediate', value: 'INTERMEDIATE' },
-  { label: 'Advanced', value: 'ADVANCED' },
-  { label: 'Professional', value: 'PROFESSIONAL' },
-];
-
-const TIMEFRAME_OPTIONS = [
-  { label: 'Hours per day', value: 'PER_DAY' },
-  { label: 'Hours per week', value: 'PER_WEEK' },
-];
-
-const LANGUAGES = [
-  { label: 'English', value: 'en' },
-  { label: 'Spanish', value: 'es' },
-  { label: 'Hindi', value: 'hi' },
-  { label: 'French', value: 'fr' },
-  { label: 'German', value: 'de' },
 ];
 
 export function OnboardingPage() {
@@ -69,52 +82,82 @@ export function OnboardingPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Form State
+  // Step 1: Basic Profile
   const [fullName, setFullName] = useState('');
-  const [profilePictureUrl, setProfilePictureUrl] = useState('');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [country, setCountry] = useState('');
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
-  const [preferredLanguage, setPreferredLanguage] = useState('en');
-
   const [college, setCollege] = useState('');
   const [degree, setDegree] = useState('');
   const [branch, setBranch] = useState('');
-  const [currentSemester, setCurrentSemester] = useState<string>('');
-  const [graduationYear, setGraduationYear] = useState<string>('');
+  const [graduationYear, setGraduationYear] = useState('');
   const [currentStatus, setCurrentStatus] = useState('');
 
+  // Step 2: Career Goal & Timeline (Required)
   const [targetRole, setTargetRole] = useState('');
   const [customTargetRole, setCustomTargetRole] = useState('');
-  const [experienceLevel, setExperienceLevel] = useState('');
-  const [availabilityHours, setAvailabilityHours] = useState<string>('');
-  const [availabilityTimeframe, setAvailabilityTimeframe] = useState<'PER_DAY' | 'PER_WEEK'>('PER_DAY');
+  const [timeline, setTimeline] = useState('');
+  const [customTimeline, setCustomTimeline] = useState('');
 
-  // Handle file selection with strict image extension checks
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError('');
+  // Step 3: Target Companies (Optional)
+  const [targetCompanies, setTargetCompanies] = useState<string[]>([]);
+  const [companyInput, setCompanyInput] = useState('');
+
+  // Step 4: Resume Upload (Optional)
+  const [_resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeMetadata, setResumeMetadata] = useState<{
+    publicId: string;
+    secureUrl: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+    uploadDate: string;
+  } | null>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+
+  const handleAddCompany = (company: string) => {
+    const trimmed = company.trim();
+    if (trimmed && !targetCompanies.includes(trimmed)) {
+      setTargetCompanies([...targetCompanies, trimmed]);
+      setCompanyInput('');
+    }
+  };
+
+  const handleRemoveCompany = (company: string) => {
+    setTargetCompanies(targetCompanies.filter((c) => c !== company));
+  };
+
+  const handleResumeFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+    setResumeFile(file);
+    setIsUploadingResume(true);
+    setError('');
 
-    if (!allowedExtensions.includes(fileExtension) || !file.type.startsWith('image/')) {
-      setError('Invalid file format. Only image extensions (.png, .jpg, .jpeg, .webp, .gif) are allowed.');
-      e.target.value = '';
-      return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/v1/resume/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error?.message || 'Failed to upload resume');
+      }
+
+      setResumeMetadata(data.resume);
+    } catch (err: any) {
+      setError(err.message || 'Error uploading resume. You can skip and try again later.');
+    } finally {
+      setIsUploadingResume(false);
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setProfilePictureUrl(base64String);
-      setImagePreview(base64String);
-    };
-    reader.readAsDataURL(file);
   };
 
-  // Step 1 Validation
+  // Validation routines
   const validateStep1 = () => {
     if (!fullName.trim()) {
       setError('Full Name is required');
@@ -124,29 +167,20 @@ export function OnboardingPage() {
     return true;
   };
 
-  // Step 2 Validation (Optional step)
   const validateStep2 = () => {
-    setError('');
-    return true;
-  };
-
-  // Step 3 Validation
-  const validateStep3 = () => {
     const selectedRole = targetRole === 'Other' ? customTargetRole : targetRole;
     if (!selectedRole.trim()) {
-      setError('Target Job Role is required. Please select or specify your role.');
+      setError('Target Job Role is required');
       return false;
     }
-
-    if (availabilityHours) {
-      const hoursNum = parseInt(availabilityHours, 10);
-      const maxHours = availabilityTimeframe === 'PER_DAY' ? 24 : 168;
-      if (isNaN(hoursNum) || hoursNum < 1 || hoursNum > maxHours) {
-        setError(`Availability hours must be between 1 and ${maxHours} for ${availabilityTimeframe === 'PER_DAY' ? 'per day' : 'per week'}`);
-        return false;
-      }
+    if (!timeline) {
+      setError('Timeline is required. Please select your target timeline.');
+      return false;
     }
-
+    if (timeline === 'Custom' && !customTimeline.trim()) {
+      setError('Please specify your custom timeline');
+      return false;
+    }
     setError('');
     return true;
   };
@@ -156,6 +190,8 @@ export function OnboardingPage() {
       setCurrentStep(2);
     } else if (currentStep === 2 && validateStep2()) {
       setCurrentStep(3);
+    } else if (currentStep === 3) {
+      setCurrentStep(4);
     }
   };
 
@@ -166,53 +202,95 @@ export function OnboardingPage() {
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!validateStep3()) return;
+  const handleCompleteOnboarding = async () => {
+    if (!validateStep1() || !validateStep2()) {
+      return;
+    }
 
     setIsLoading(true);
     setError('');
 
     const finalTargetRole = targetRole === 'Other' ? customTargetRole.trim() : targetRole;
-
-    const payload = {
-      fullName: fullName.trim(),
-      profilePictureUrl: profilePictureUrl || undefined,
-      country: country.trim() || undefined,
-      timezone: timezone.trim() || undefined,
-      preferredLanguage: preferredLanguage || 'en',
-      college: college.trim() || undefined,
-      degree: degree.trim() || undefined,
-      branch: branch.trim() || undefined,
-      currentSemester: currentSemester ? parseInt(currentSemester, 10) : undefined,
-      graduationYear: graduationYear ? parseInt(graduationYear, 10) : undefined,
-      currentStatus: currentStatus || undefined,
-      targetRole: finalTargetRole,
-      experienceLevel: experienceLevel || undefined,
-      availabilityHours: availabilityHours ? parseInt(availabilityHours, 10) : undefined,
-      availabilityTimeframe: availabilityHours ? availabilityTimeframe : undefined,
-    };
+    const finalTimeline = timeline === 'Custom' ? customTimeline.trim() : timeline;
 
     try {
-      const res = await fetch('/api/v1/profile', {
+      // 1. Save Basic Profile
+      const profileRes = await fetch('/api/v1/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          college: college.trim() || undefined,
+          degree: degree.trim() || undefined,
+          branch: branch.trim() || undefined,
+          graduationYear: graduationYear ? parseInt(graduationYear, 10) : undefined,
+          currentStatus: currentStatus || undefined,
+          targetRole: finalTargetRole,
+        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error?.message || 'Failed to save profile');
+      const profileData = await profileRes.json();
+      if (!profileRes.ok) {
+        throw new Error(profileData.error?.message || 'Failed to save profile');
       }
 
-      updateLocalProfile(data.data.profile, data.data.completion);
+      // 2. Save Career Goal
+      const goalRes = await fetch('/api/v1/career-goals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          targetRole: finalTargetRole,
+          targetCompanies,
+          timeline: finalTimeline,
+          customTimeline: timeline === 'Custom' ? customTimeline.trim() : undefined,
+        }),
+      });
+
+      if (!goalRes.ok) {
+        const goalErr = await goalRes.json();
+        throw new Error(goalErr.error?.message || 'Failed to save career goal');
+      }
+
+      // 3. Create Initial Career Digital Twin
+      await fetch('/api/v1/digital-twin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          profile: {
+            fullName: fullName.trim(),
+            college: college.trim() || undefined,
+            degree: degree.trim() || undefined,
+            branch: branch.trim() || undefined,
+            graduationYear: graduationYear ? parseInt(graduationYear, 10) : undefined,
+          },
+          goal: { targetRole: finalTargetRole },
+          timeline: { timeline: finalTimeline, customTimeline },
+          targetCompanies: { companies: targetCompanies },
+          resumeMetadata: resumeMetadata
+            ? {
+                filename: resumeMetadata.filename,
+                secureUrl: resumeMetadata.secureUrl,
+                publicId: resumeMetadata.publicId,
+                size: resumeMetadata.size,
+                uploadDate: resumeMetadata.uploadDate,
+              }
+            : undefined,
+        }),
+      });
+
+      updateLocalProfile(profileData.data.profile, profileData.data.completion);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred while saving profile');
+      setError(err.message || 'An error occurred while completing onboarding');
     } finally {
       setIsLoading(false);
     }
@@ -224,20 +302,22 @@ export function OnboardingPage() {
         <div className="onboarding-header">
           <h1 className="onboarding-title">Welcome to CareerOS</h1>
           <p className="onboarding-subtitle">
-            Let's personalize your career copilot experience in just a few quick steps
+            Set up your career goal, timeline, and digital twin context
           </p>
         </div>
 
         <StepIndicator
           steps={STEPS}
           currentStep={currentStep}
-          onStepClick={(stepId) => setCurrentStep(stepId)}
+          onStepClick={(stepId) => {
+            if (stepId <= currentStep) setCurrentStep(stepId);
+          }}
         />
 
         {error && <Alert type="error" message={error} />}
 
         <form onSubmit={(e) => e.preventDefault()}>
-          {/* STEP 1: Personal Information */}
+          {/* STEP 1: Basic Profile */}
           {currentStep === 1 && (
             <div className="form-grid">
               <div className="form-grid-full">
@@ -251,67 +331,13 @@ export function OnboardingPage() {
                 />
               </div>
 
-              {/* Profile Picture Upload - Image files only */}
-              <div className="form-group form-grid-full">
-                <label className="form-label">Profile Picture (Image File Only)</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.25rem' }}>
-                  <div className="avatar-preview-box">
-                    {imagePreview ? (
-                      <img src={imagePreview} alt="Avatar Preview" className="avatar-img" />
-                    ) : (
-                      <span className="avatar-placeholder">No image</span>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
-                    onChange={handleFileChange}
-                    className="form-input"
-                    style={{ padding: '0.5rem' }}
-                  />
-                </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem', display: 'block' }}>
-                  Allowed image formats: PNG, JPG, JPEG, WEBP, GIF
-                </span>
-              </div>
-
-              <Input
-                label="Country"
-                type="text"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder="e.g. United States, India"
-              />
-
-              <Input
-                label="Time Zone"
-                type="text"
-                value={timezone}
-                onChange={(e) => setTimezone(e.target.value)}
-                placeholder="e.g. America/New_York"
-              />
-
-              <div className="form-grid-full">
-                <Select
-                  label="Preferred Language"
-                  value={preferredLanguage}
-                  onChange={(e) => setPreferredLanguage(e.target.value)}
-                  options={LANGUAGES}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* STEP 2: Education & Professional Information */}
-          {currentStep === 2 && (
-            <div className="form-grid">
               <div className="form-grid-full">
                 <Input
                   label="College / University"
                   type="text"
                   value={college}
                   onChange={(e) => setCollege(e.target.value)}
-                  placeholder="e.g. Stanford University"
+                  placeholder="e.g. Stanford University / IIT Bombay"
                 />
               </div>
 
@@ -320,7 +346,7 @@ export function OnboardingPage() {
                 type="text"
                 value={degree}
                 onChange={(e) => setDegree(e.target.value)}
-                placeholder="e.g. Bachelor of Science"
+                placeholder="e.g. B.Tech / B.S."
               />
 
               <Input
@@ -329,16 +355,6 @@ export function OnboardingPage() {
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
                 placeholder="e.g. Computer Science"
-              />
-
-              <Input
-                label="Current Semester"
-                type="number"
-                min="1"
-                max="12"
-                value={currentSemester}
-                onChange={(e) => setCurrentSemester(e.target.value)}
-                placeholder="e.g. 6"
               />
 
               <Input
@@ -363,8 +379,8 @@ export function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 3: Career & Availability Information */}
-          {currentStep === 3 && (
+          {/* STEP 2: Career Goal & Timeline (Required) */}
+          {currentStep === 2 && (
             <div className="form-grid">
               <div className="form-grid-full">
                 <Select
@@ -376,7 +392,6 @@ export function OnboardingPage() {
                 />
               </div>
 
-              {/* Other option: allow writing custom target role */}
               {targetRole === 'Other' && (
                 <div className="form-grid-full">
                   <Input
@@ -384,7 +399,7 @@ export function OnboardingPage() {
                     type="text"
                     value={customTargetRole}
                     onChange={(e) => setCustomTargetRole(e.target.value)}
-                    placeholder="Type your custom target role..."
+                    placeholder="Specify your custom target role..."
                     required
                   />
                 </div>
@@ -392,36 +407,163 @@ export function OnboardingPage() {
 
               <div className="form-grid-full">
                 <Select
-                  label="Experience Level"
-                  value={experienceLevel}
-                  onChange={(e) => setExperienceLevel(e.target.value)}
-                  options={EXPERIENCE_LEVELS}
-                  placeholder="Select your current experience level..."
+                  label="Timeline * (Required)"
+                  value={timeline}
+                  onChange={(e) => setTimeline(e.target.value)}
+                  options={TIMELINE_OPTIONS}
+                  placeholder="Select target timeline..."
                 />
               </div>
 
-              {/* Availability Hours & Timeframe Selector (2 Options) */}
-              <Input
-                label="Availability Hours"
-                type="number"
-                min="1"
-                max={availabilityTimeframe === 'PER_DAY' ? 24 : 168}
-                value={availabilityHours}
-                onChange={(e) => setAvailabilityHours(e.target.value)}
-                placeholder={availabilityTimeframe === 'PER_DAY' ? 'e.g. 4 hours/day' : 'e.g. 20 hours/week'}
-              />
+              {timeline === 'Custom' && (
+                <div className="form-grid-full">
+                  <Input
+                    label="Specify Custom Timeline *"
+                    type="text"
+                    value={customTimeline}
+                    onChange={(e) => setCustomTimeline(e.target.value)}
+                    placeholder="e.g. 9 Months or Dec 2026"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
-              <Select
-                label="Availability Timeframe Mode"
-                value={availabilityTimeframe}
-                onChange={(e) => setAvailabilityTimeframe(e.target.value as 'PER_DAY' | 'PER_WEEK')}
-                options={TIMEFRAME_OPTIONS}
-              />
+          {/* STEP 3: Target Companies (Optional) */}
+          {currentStep === 3 && (
+            <div className="form-grid">
+              <div className="form-grid-full">
+                <label className="form-label">Target Companies (Optional)</label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Type company name and press Add..."
+                    value={companyInput}
+                    onChange={(e) => setCompanyInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCompany(companyInput);
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleAddCompany(companyInput)}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {/* Selected Tags */}
+                {targetCompanies.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                    {targetCompanies.map((comp) => (
+                      <span
+                        key={comp}
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.15)',
+                          color: '#818cf8',
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.875rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          border: '1px solid rgba(99, 102, 241, 0.3)',
+                        }}
+                      >
+                        {comp}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCompany(comp)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#818cf8',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Suggestions */}
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
+                  Popular Suggestions:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {COMPANY_SUGGESTIONS.map((comp) => (
+                    <button
+                      key={comp}
+                      type="button"
+                      onClick={() => handleAddCompany(comp)}
+                      style={{
+                        background: targetCompanies.includes(comp) ? '#6366f1' : 'var(--color-surface)',
+                        color: targetCompanies.includes(comp) ? '#fff' : 'var(--color-text-secondary)',
+                        border: '1px solid var(--color-border)',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + {comp}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: Resume Upload (Optional) */}
+          {currentStep === 4 && (
+            <div className="form-grid">
+              <div className="form-grid-full" style={{ textAlign: 'center', padding: '2rem 1rem', border: '2px dashed var(--color-border)', borderRadius: '12px' }}>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-text)' }}>Upload Your Resume (Optional)</h3>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+                  Upload your existing resume to store metadata in your Career Digital Twin. Skipping this will never block onboarding.
+                </p>
+
+                {resumeMetadata ? (
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                    <p style={{ color: '#10b981', fontWeight: 600, margin: 0 }}>
+                      ✓ Resume Uploaded: {resumeMetadata.filename}
+                    </p>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                      Size: {(resumeMetadata.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      id="resume-input"
+                      onChange={handleResumeFileSelect}
+                      style={{ display: 'none' }}
+                      disabled={isUploadingResume}
+                    />
+                    <label htmlFor="resume-input">
+                      <Button type="button" variant="secondary" isLoading={isUploadingResume} onClick={() => document.getElementById('resume-input')?.click()}>
+                        {isUploadingResume ? 'Uploading...' : 'Choose Resume File (PDF / DOCX)'}
+                      </Button>
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* ONBOARDING ACTIONS */}
-          <div className="onboarding-actions">
+          <div className="onboarding-actions" style={{ marginTop: '2rem' }}>
             {currentStep > 1 ? (
               <Button type="button" variant="secondary" onClick={handleBack} disabled={isLoading}>
                 Back
@@ -430,30 +572,24 @@ export function OnboardingPage() {
               <div />
             )}
 
-            <div className="actions-right">
-              {currentStep < 3 && (
+            <div className="actions-right" style={{ display: 'flex', gap: '0.75rem' }}>
+              {currentStep === 4 && (
                 <button
                   type="button"
                   className="btn btn-ghost"
-                  onClick={() => {
-                    if (currentStep === 1 && !fullName.trim()) {
-                      setError('Full Name is required before proceeding');
-                      return;
-                    }
-                    setError('');
-                    setCurrentStep(currentStep + 1);
-                  }}
+                  onClick={handleCompleteOnboarding}
+                  disabled={isLoading}
                 >
-                  Skip optional fields
+                  Skip Resume & Finish
                 </button>
               )}
 
-              {currentStep < 3 ? (
+              {currentStep < 4 ? (
                 <Button type="button" onClick={handleNext}>
                   Continue
                 </Button>
               ) : (
-                <Button type="button" onClick={() => handleSubmit()} isLoading={isLoading}>
+                <Button type="button" onClick={handleCompleteOnboarding} isLoading={isLoading}>
                   Complete Onboarding
                 </Button>
               )}

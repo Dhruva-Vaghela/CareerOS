@@ -12,6 +12,12 @@ export interface IEventBus {
   unsubscribe<T extends BaseEvent>(eventName: string, handler: EventHandler<T>): Promise<void>;
 }
 
+export type EventBus = IEventBus;
+
+export function createEventBus(_options?: { serviceName?: string }): IEventBus {
+  return new InMemoryEventBus();
+}
+
 // InMemory implementation for local testing and lightweight pub/sub
 export class InMemoryEventBus implements IEventBus {
   private emitter = new EventEmitter();

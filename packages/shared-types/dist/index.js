@@ -48,6 +48,53 @@ export var CareerGoalStatus;
     CareerGoalStatus["COMPLETED"] = "COMPLETED";
     CareerGoalStatus["ABANDONED"] = "ABANDONED";
 })(CareerGoalStatus || (CareerGoalStatus = {}));
+export var TimelineOption;
+(function (TimelineOption) {
+    TimelineOption["THREE_MONTHS"] = "3 Months";
+    TimelineOption["SIX_MONTHS"] = "6 Months";
+    TimelineOption["TWELVE_MONTHS"] = "12 Months";
+    TimelineOption["EIGHTEEN_MONTHS"] = "18 Months";
+    TimelineOption["TWENTY_FOUR_MONTHS"] = "24 Months";
+    TimelineOption["CUSTOM"] = "Custom";
+})(TimelineOption || (TimelineOption = {}));
+export var ResumeStatus;
+(function (ResumeStatus) {
+    ResumeStatus["ACTIVE"] = "ACTIVE";
+    ResumeStatus["ARCHIVED"] = "ARCHIVED";
+})(ResumeStatus || (ResumeStatus = {}));
+export var TwinNodeType;
+(function (TwinNodeType) {
+    TwinNodeType["GOAL"] = "GOAL";
+    TwinNodeType["TIMELINE"] = "TIMELINE";
+    TwinNodeType["TARGET_COMPANY"] = "TARGET_COMPANY";
+    TwinNodeType["SKILL"] = "SKILL";
+    TwinNodeType["LEARNING"] = "LEARNING";
+    TwinNodeType["PROJECT"] = "PROJECT";
+    TwinNodeType["ASSESSMENT"] = "ASSESSMENT";
+    TwinNodeType["INTERVIEW"] = "INTERVIEW";
+    TwinNodeType["CERTIFICATION"] = "CERTIFICATION";
+    TwinNodeType["EDUCATION"] = "EDUCATION";
+    TwinNodeType["EXPERIENCE"] = "EXPERIENCE";
+    TwinNodeType["PREFERENCE"] = "PREFERENCE";
+    TwinNodeType["RESUME_INSIGHT"] = "RESUME_INSIGHT";
+    TwinNodeType["READINESS"] = "READINESS";
+    TwinNodeType["RECOMMENDATION"] = "RECOMMENDATION";
+    TwinNodeType["PRODUCTIVITY"] = "PRODUCTIVITY";
+    TwinNodeType["PROFILE"] = "PROFILE";
+    TwinNodeType["RESUME_METADATA"] = "RESUME_METADATA";
+})(TwinNodeType || (TwinNodeType = {}));
+export var VerificationStatus;
+(function (VerificationStatus) {
+    VerificationStatus["VERIFIED"] = "VERIFIED";
+    VerificationStatus["UNVERIFIED"] = "UNVERIFIED";
+    VerificationStatus["IMPORTED"] = "IMPORTED";
+})(VerificationStatus || (VerificationStatus = {}));
+export var ConfidenceLevel;
+(function (ConfidenceLevel) {
+    ConfidenceLevel["HIGH"] = "HIGH";
+    ConfidenceLevel["MEDIUM"] = "MEDIUM";
+    ConfidenceLevel["LOW"] = "LOW";
+})(ConfidenceLevel || (ConfidenceLevel = {}));
 export var NodeType;
 (function (NodeType) {
     NodeType["MANDATORY"] = "MANDATORY";

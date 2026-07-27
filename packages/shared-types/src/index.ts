@@ -93,15 +93,136 @@ export enum CareerGoalStatus {
   ABANDONED = 'ABANDONED',
 }
 
+export enum TimelineOption {
+  THREE_MONTHS = '3 Months',
+  SIX_MONTHS = '6 Months',
+  TWELVE_MONTHS = '12 Months',
+  EIGHTEEN_MONTHS = '18 Months',
+  TWENTY_FOUR_MONTHS = '24 Months',
+  CUSTOM = 'Custom',
+}
+
 export interface CareerGoal {
   id: string;
   userId: string;
   targetRole: string;
   targetCompanies: string[];
-  targetTimeline: Date;
+  targetTimeline: string;
+  customTimeline?: string;
   status: CareerGoalStatus;
   createdAt: Date;
+  updatedAt: Date;
 }
+
+export enum ResumeStatus {
+  ACTIVE = 'ACTIVE',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export interface Resume {
+  id: string;
+  userId: string;
+  publicId: string;
+  secureUrl: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  version: number;
+  status: ResumeStatus;
+  uploadDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ResumeVersion {
+  id: string;
+  resumeId: string;
+  version: number;
+  publicId: string;
+  secureUrl: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  createdAt: Date;
+}
+
+export enum TwinNodeType {
+  GOAL = 'GOAL',
+  TIMELINE = 'TIMELINE',
+  TARGET_COMPANY = 'TARGET_COMPANY',
+  SKILL = 'SKILL',
+  LEARNING = 'LEARNING',
+  PROJECT = 'PROJECT',
+  ASSESSMENT = 'ASSESSMENT',
+  INTERVIEW = 'INTERVIEW',
+  CERTIFICATION = 'CERTIFICATION',
+  EDUCATION = 'EDUCATION',
+  EXPERIENCE = 'EXPERIENCE',
+  PREFERENCE = 'PREFERENCE',
+  RESUME_INSIGHT = 'RESUME_INSIGHT',
+  READINESS = 'READINESS',
+  RECOMMENDATION = 'RECOMMENDATION',
+  PRODUCTIVITY = 'PRODUCTIVITY',
+  PROFILE = 'PROFILE',
+  RESUME_METADATA = 'RESUME_METADATA',
+}
+
+export enum VerificationStatus {
+  VERIFIED = 'VERIFIED',
+  UNVERIFIED = 'UNVERIFIED',
+  IMPORTED = 'IMPORTED',
+}
+
+export enum ConfidenceLevel {
+  HIGH = 'HIGH',
+  MEDIUM = 'MEDIUM',
+  LOW = 'LOW',
+}
+
+export interface TwinNode {
+  id: string;
+  userId: string;
+  twinId: string;
+  nodeType: TwinNodeType;
+  source: string;
+  verificationStatus: VerificationStatus;
+  confidenceScore: ConfidenceLevel;
+  createdAt: Date;
+  updatedAt: Date;
+  metadata: Record<string, unknown>;
+}
+
+export interface CareerDigitalTwin {
+  id: string;
+  userId: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ContextFeature =
+  | 'Roadmap'
+  | 'Goal'
+  | 'Timeline'
+  | 'Skills'
+  | 'Learning'
+  | 'Interview'
+  | 'Assessment'
+  | 'Recommendation'
+  | 'Profile'
+  | 'Resume';
+
+export interface ContextQuery {
+  userId: string;
+  features: ContextFeature[];
+}
+
+export interface ScopedContextPayload {
+  userId: string;
+  nodes: TwinNode[];
+  timestamp: Date;
+}
+
 
 export enum NodeType {
   MANDATORY = 'MANDATORY',
@@ -445,3 +566,19 @@ export type ReadinessUpdatedEvent = BaseEvent<{
   userId: string;
   snapshot: ReadinessSnapshot;
 }>;
+
+export type PreferencesUpdatedEvent = BaseEvent<{
+  userId: string;
+  preferences: Record<string, unknown>;
+}>;
+
+export type TwinCreatedEvent = BaseEvent<{
+  userId: string;
+  twinId: string;
+}>;
+
+export type TwinNodeUpdatedEvent = BaseEvent<{
+  userId: string;
+  node: TwinNode;
+}>;
+

@@ -1,6 +1,9 @@
 import { EventEmitter } from 'events';
 import { createLogger } from '@careeros/logger';
 const logger = createLogger('event-bus');
+export function createEventBus(_options) {
+    return new InMemoryEventBus();
+}
 // InMemory implementation for local testing and lightweight pub/sub
 export class InMemoryEventBus {
     emitter = new EventEmitter();
