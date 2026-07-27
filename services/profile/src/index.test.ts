@@ -3,13 +3,12 @@ import request from 'supertest';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
-import { getDb } from './db/index.js';
-import { testConnection } from '@careeros/database';
+import { initDb } from './db/index.js';
+import { testConnection, disconnectDatabase } from '@careeros/database';
 import { profileRouter } from './routes/profile.js';
 import { globalErrorHandler } from '@careeros/errors';
 import { parseAuth } from './middleware/auth.js';
-import { profiles } from './db/schema.js';
-import { eq } from 'drizzle-orm';
+import { ProfileModel } from './db/schema.js';
 import { config } from './config.js';
 import crypto from 'crypto';
 
@@ -26,15 +25,14 @@ describe('Profile Service Integration Tests', () => {
     app.use('/api/v1/profile', profileRouter);
     app.use(globalErrorHandler);
 
-    const { pool } = getDb();
-    const isConnected = await testConnection(pool);
+    const { connection } = await initDb();
+    const isConnected = await testConnection(connection);
     expect(isConnected).toBe(true);
   });
 
   afterAll(async () => {
-    const { db, pool } = getDb();
-    await db.delete(profiles).where(eq(profiles.userId, testUserId));
-    await pool.end();
+    await ProfileModel.deleteMany({ userId: testUserId });
+    await disconnectDatabase();
   });
 
   it('should return empty/incomplete status for non-existent profile', async () => {
@@ -61,7 +59,6 @@ describe('Profile Service Integration Tests', () => {
       .set('Authorization', `Bearer ${testToken}`)
       .send({
         fullName: 'Jane Doe',
-        // targetRole omitted
       });
 
     expect(res.status).toBe(400);
@@ -86,7 +83,7 @@ describe('Profile Service Integration Tests', () => {
         currentSemester: 6,
         graduationYear: 2026,
         currentStatus: 'STUDENT',
-        targetRole: 'Robotics Engineer', // Custom written role
+        targetRole: 'Robotics Engineer',
         experienceLevel: 'INTERMEDIATE',
         availabilityHours: 4,
         availabilityTimeframe: 'PER_DAY',

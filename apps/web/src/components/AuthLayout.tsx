@@ -98,8 +98,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                   <ShieldCheck size={20} />
                 </div>
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>Neon Postgres & Cloud Storage</h4>
-                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>Isolated schema ORM security with native PDF document viewer.</p>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>MongoDB & Cloud Storage</h4>
+                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>Isolated database schema security with native PDF document viewer.</p>
                 </div>
               </div>
             </div>

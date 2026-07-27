@@ -1,6 +1,9 @@
-import { eq, and } from 'drizzle-orm';
-import { getDb } from '../db/index.js';
-import { digitalTwins, twinNodes, DigitalTwinRow, TwinNodeRow } from '../db/schema.js';
+import {
+  DigitalTwinModel,
+  TwinNodeModel,
+  IDigitalTwinDocument,
+  ITwinNodeDocument,
+} from '../db/schema.js';
 import {
   TwinNode,
   TwinNodeType,
@@ -8,7 +11,6 @@ import {
   ConfidenceLevel,
   CareerDigitalTwin,
 } from '@careeros/shared-types';
-import { NotFoundError } from '@careeros/errors';
 import { createLogger } from '@careeros/logger';
 
 const logger = createLogger('digital-twin-service');
@@ -54,64 +56,39 @@ export interface InitialTwinData {
 
 export class DigitalTwinService {
   async getOrCreateTwin(userId: string): Promise<CareerDigitalTwin> {
-    const { db } = getDb();
-    const rows = await db
-      .select()
-      .from(digitalTwins)
-      .where(eq(digitalTwins.userId, userId))
-      .limit(1);
+    let twinDoc = await DigitalTwinModel.findOne({ userId });
 
-    if (rows.length > 0) {
-      return this.mapTwinToDomain(rows[0]);
-    }
-
-    const now = new Date();
-    const [inserted] = await db
-      .insert(digitalTwins)
-      .values({
+    if (!twinDoc) {
+      const now = new Date();
+      twinDoc = await DigitalTwinModel.create({
         userId,
         status: 'ACTIVE',
         createdAt: now,
         updatedAt: now,
-      })
-      .returning();
+      });
+      logger.info({ userId, twinId: twinDoc.id }, 'Created new Career Digital Twin');
+    }
 
-    logger.info({ userId, twinId: inserted.id }, 'Created new Career Digital Twin');
-    return this.mapTwinToDomain(inserted);
+    return this.mapTwinToDomain(twinDoc);
   }
 
   async getAllNodes(userId: string): Promise<TwinNode[]> {
     const twin = await this.getOrCreateTwin(userId);
-    const { db } = getDb();
-
-    const rows = await db
-      .select()
-      .from(twinNodes)
-      .where(eq(twinNodes.twinId, twin.id));
-
-    return rows.map((r) => this.mapNodeToDomain(r));
+    const nodeDocs = await TwinNodeModel.find({ twinId: twin.id });
+    return nodeDocs.map((doc) => this.mapNodeToDomain(doc));
   }
 
   async getNodeByType(userId: string, nodeType: TwinNodeType): Promise<TwinNode | null> {
     const twin = await this.getOrCreateTwin(userId);
-    const { db } = getDb();
-
-    const rows = await db
-      .select()
-      .from(twinNodes)
-      .where(and(eq(twinNodes.twinId, twin.id), eq(twinNodes.nodeType, nodeType)))
-      .limit(1);
-
-    if (rows.length === 0) {
+    const doc = await TwinNodeModel.findOne({ twinId: twin.id, nodeType });
+    if (!doc) {
       return null;
     }
-
-    return this.mapNodeToDomain(rows[0]);
+    return this.mapNodeToDomain(doc);
   }
 
   async upsertNode(userId: string, input: UpsertNodeInput): Promise<TwinNode> {
     const twin = await this.getOrCreateTwin(userId);
-    const { db } = getDb();
     const now = new Date();
 
     const verificationStatus =
@@ -130,63 +107,38 @@ export class DigitalTwinService {
           ? ConfidenceLevel.MEDIUM
           : ConfidenceLevel.LOW);
 
-    const existingRows = await db
-      .select()
-      .from(twinNodes)
-      .where(and(eq(twinNodes.twinId, twin.id), eq(twinNodes.nodeType, input.nodeType)))
-      .limit(1);
-
-    let row: TwinNodeRow;
-
-    if (existingRows.length > 0) {
-      const [updated] = await db
-        .update(twinNodes)
-        .set({
-          source: input.source,
-          verificationStatus,
-          confidenceScore,
-          metadata: input.metadata,
-          updatedAt: now,
-        })
-        .where(eq(twinNodes.id, existingRows[0].id))
-        .returning();
-
-      row = updated;
-      logger.info({ userId, nodeId: row.id, nodeType: input.nodeType }, 'Updated Twin Node');
-    } else {
-      const [inserted] = await db
-        .insert(twinNodes)
-        .values({
+    const nodeDoc = await TwinNodeModel.findOneAndUpdate(
+      { twinId: twin.id, nodeType: input.nodeType },
+      {
+        $set: {
           userId,
-          twinId: twin.id,
-          nodeType: input.nodeType,
           source: input.source,
           verificationStatus,
           confidenceScore,
           metadata: input.metadata,
-          createdAt: now,
           updatedAt: now,
-        })
-        .returning();
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      { upsert: true, new: true, runValidators: true },
+    );
 
-      row = inserted;
-      logger.info({ userId, nodeId: row.id, nodeType: input.nodeType }, 'Created new Twin Node');
+    if (!nodeDoc) {
+      throw new Error('Failed to upsert twin node document');
     }
 
-    // Touch Digital Twin updatedAt
-    await db
-      .update(digitalTwins)
-      .set({ updatedAt: now })
-      .where(eq(digitalTwins.id, twin.id));
+    await DigitalTwinModel.updateOne({ _id: twin.id }, { $set: { updatedAt: now } });
+    logger.info({ userId, nodeId: nodeDoc.id, nodeType: input.nodeType }, 'Upserted Twin Node');
 
-    return this.mapNodeToDomain(row);
+    return this.mapNodeToDomain(nodeDoc);
   }
 
   async createInitialTwin(userId: string, data: InitialTwinData): Promise<{ twin: CareerDigitalTwin; nodes: TwinNode[] }> {
     const twin = await this.getOrCreateTwin(userId);
     const nodes: TwinNode[] = [];
 
-    // 1. Profile Node
     if (data.profile) {
       const profileNode = await this.upsertNode(userId, {
         nodeType: TwinNodeType.PROFILE,
@@ -198,7 +150,6 @@ export class DigitalTwinService {
       nodes.push(profileNode);
     }
 
-    // 2. Career Goal Node
     if (data.goal) {
       const goalNode = await this.upsertNode(userId, {
         nodeType: TwinNodeType.GOAL,
@@ -210,7 +161,6 @@ export class DigitalTwinService {
       nodes.push(goalNode);
     }
 
-    // 3. Timeline Node
     if (data.timeline) {
       const timelineNode = await this.upsertNode(userId, {
         nodeType: TwinNodeType.TIMELINE,
@@ -222,7 +172,6 @@ export class DigitalTwinService {
       nodes.push(timelineNode);
     }
 
-    // 4. Target Companies Node
     if (data.targetCompanies && data.targetCompanies.companies.length > 0) {
       const targetCompanyNode = await this.upsertNode(userId, {
         nodeType: TwinNodeType.TARGET_COMPANY,
@@ -234,7 +183,6 @@ export class DigitalTwinService {
       nodes.push(targetCompanyNode);
     }
 
-    // 5. Preferences Node
     if (data.preferences) {
       const prefNode = await this.upsertNode(userId, {
         nodeType: TwinNodeType.PREFERENCE,
@@ -246,7 +194,6 @@ export class DigitalTwinService {
       nodes.push(prefNode);
     }
 
-    // 6. Resume Metadata Node (if uploaded) - marked IMPORTED & Confidence MEDIUM
     if (data.resumeMetadata) {
       const resumeNode = await this.upsertNode(userId, {
         nodeType: TwinNodeType.RESUME_METADATA,
@@ -258,33 +205,31 @@ export class DigitalTwinService {
       nodes.push(resumeNode);
     }
 
-    // Explicitly NO Resume Insight Node created during onboarding
-
     return { twin, nodes };
   }
 
-  private mapTwinToDomain(row: DigitalTwinRow): CareerDigitalTwin {
+  private mapTwinToDomain(doc: IDigitalTwinDocument): CareerDigitalTwin {
     return {
-      id: row.id,
-      userId: row.userId,
-      status: row.status,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      id: doc.id || doc._id.toHexString(),
+      userId: doc.userId,
+      status: doc.status,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
     };
   }
 
-  private mapNodeToDomain(row: TwinNodeRow): TwinNode {
+  private mapNodeToDomain(doc: ITwinNodeDocument): TwinNode {
     return {
-      id: row.id,
-      userId: row.userId,
-      twinId: row.twinId,
-      nodeType: row.nodeType as TwinNodeType,
-      source: row.source,
-      verificationStatus: row.verificationStatus as VerificationStatus,
-      confidenceScore: row.confidenceScore as ConfidenceLevel,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      metadata: row.metadata as Record<string, unknown>,
+      id: doc.id || doc._id.toHexString(),
+      userId: doc.userId,
+      twinId: doc.twinId,
+      nodeType: doc.nodeType as TwinNodeType,
+      source: doc.source,
+      verificationStatus: doc.verificationStatus as VerificationStatus,
+      confidenceScore: doc.confidenceScore as ConfidenceLevel,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      metadata: (doc.metadata as Record<string, unknown>) || {},
     };
   }
 }

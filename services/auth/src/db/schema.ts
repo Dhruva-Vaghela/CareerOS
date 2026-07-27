@@ -1,29 +1,77 @@
-import { pgSchema, uuid, varchar, timestamp, text } from 'drizzle-orm/pg-core';
+import mongoose, { Schema, Document } from 'mongoose';
 import { UserStatus } from '@careeros/shared-types';
 
-export const authSchema = pgSchema('auth');
+export interface IUserDocument extends Document {
+  _id: mongoose.Types.ObjectId;
+  email: string;
+  passwordHash: string;
+  authProvider: string;
+  status: UserStatus;
+  createdAt: Date;
+}
 
-export const users = authSchema.table('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
-  authProvider: varchar('auth_provider', { length: 50 }).notNull().default('LOCAL'),
-  status: varchar('status', { length: 50 }).$type<UserStatus>().notNull().default(UserStatus.ACTIVE),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export interface ISessionDocument extends Document {
+  _id: mongoose.Types.ObjectId;
+  userId: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  refreshTokenHash: string;
+}
+
+const userSchema = new Schema<IUserDocument>(
+  {
+    email: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    authProvider: { type: String, required: true, default: 'LOCAL' },
+    status: { type: String, enum: Object.values(UserStatus), required: true, default: UserStatus.ACTIVE },
+    createdAt: { type: Date, default: Date.now, required: true },
+  },
+  {
+    timestamps: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
+);
+
+// Virtual id property
+userSchema.virtual('id').get(function (this: IUserDocument) {
+  return this._id.toHexString();
 });
 
-export const sessions = authSchema.table('sessions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  issuedAt: timestamp('issued_at').defaultNow().notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  refreshTokenHash: text('refresh_token_hash').notNull(),
+const sessionSchema = new Schema<ISessionDocument>(
+  {
+    userId: { type: String, required: true, index: true },
+    issuedAt: { type: Date, default: Date.now, required: true },
+    expiresAt: { type: Date, required: true, index: { expires: 0 } }, // TTL index for automatic cleanup
+    refreshTokenHash: { type: String, required: true, index: true },
+  },
+  {
+    timestamps: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
+);
+
+sessionSchema.virtual('id').get(function (this: ISessionDocument) {
+  return this._id.toHexString();
 });
 
-export type UserRow = typeof users.$inferSelect;
-export type NewUserRow = typeof users.$inferInsert;
+export const UserModel = mongoose.models.User || mongoose.model<IUserDocument>('User', userSchema);
+export const SessionModel = mongoose.models.Session || mongoose.model<ISessionDocument>('Session', sessionSchema);
 
-export type SessionRow = typeof sessions.$inferSelect;
-export type NewSessionRow = typeof sessions.$inferInsert;
+export type UserRow = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  authProvider: string;
+  status: UserStatus;
+  createdAt: Date;
+};
+
+export type SessionRow = {
+  id: string;
+  userId: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  refreshTokenHash: string;
+};

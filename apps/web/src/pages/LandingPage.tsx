@@ -197,7 +197,7 @@ export const LandingPage: React.FC = () => {
               Resume Cloud Foundation
             </h3>
             <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-              Secure file storage integration with Cloudinary & Neon PostgreSQL storing resume metadata with inline PDF document preview.
+              Secure file storage integration with Cloudinary & MongoDB storing resume metadata with inline PDF document preview.
             </p>
           </div>
         </div>
@@ -225,8 +225,8 @@ export const LandingPage: React.FC = () => {
 
             <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <ShieldCheck color="#10b981" size={28} style={{ marginBottom: '0.75rem' }} />
-              <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem', color: '#0f172a' }}>Neon Postgres & Auth</h4>
-              <p style={{ fontSize: '0.85rem', color: '#64748b' }}>Drizzle ORM schema isolation targeting Neon serverless Postgres.</p>
+              <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem', color: '#0f172a' }}>MongoDB & Auth</h4>
+              <p style={{ fontSize: '0.85rem', color: '#64748b' }}>Mongoose schema isolation targeting MongoDB database.</p>
             </div>
 
             <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
@@ -240,7 +240,7 @@ export const LandingPage: React.FC = () => {
 
       {/* Footer */}
       <footer style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid #e2e8f0' }}>
-        © 2026 CareerOS AI. All rights reserved. Built with React, Vite, Node.js, & Neon PostgreSQL.
+        © 2026 CareerOS AI. All rights reserved. Built with React, Vite, Node.js, & MongoDB.
       </footer>
     </div>
   );

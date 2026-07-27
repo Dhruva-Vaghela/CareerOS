@@ -1,13 +1,32 @@
-import { pgSchema, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
+import mongoose, { Schema, Document } from 'mongoose';
 
-// Define a dedicated schema for isolated boundaries
-export const healthCheckSchema = pgSchema('health_check');
+export interface ISystemCheckDocument extends Document {
+  _id: mongoose.Types.ObjectId;
+  status: string;
+  checkedAt: Date;
+}
 
-export const systemChecks = healthCheckSchema.table('system_checks', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  status: varchar('status', { length: 50 }).notNull(),
-  checkedAt: timestamp('checked_at').defaultNow().notNull(),
+const systemCheckSchema = new Schema<ISystemCheckDocument>(
+  {
+    status: { type: String, required: true },
+    checkedAt: { type: Date, default: Date.now },
+  },
+  {
+    timestamps: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
+);
+
+systemCheckSchema.virtual('id').get(function (this: ISystemCheckDocument) {
+  return this._id.toHexString();
 });
 
-export type SystemCheck = typeof systemChecks.$inferSelect;
-export type NewSystemCheck = typeof systemChecks.$inferInsert;
+export const SystemCheckModel =
+  mongoose.models.SystemCheck || mongoose.model<ISystemCheckDocument>('SystemCheck', systemCheckSchema, 'system_checks');
+
+export type SystemCheck = {
+  id: string;
+  status: string;
+  checkedAt: Date;
+};

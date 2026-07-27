@@ -1,32 +1,59 @@
-import {
-  pgSchema,
-  uuid,
-  varchar,
-  timestamp,
-  text,
-} from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import mongoose, { Schema, Document } from 'mongoose';
 import { CareerGoalStatus } from '@careeros/shared-types';
 
-export const careerGoalsSchema = pgSchema('career_goals');
+export interface ICareerGoalDocument extends Document {
+  _id: mongoose.Types.ObjectId;
+  userId: string;
+  targetRole: string;
+  targetCompanies: string[];
+  timeline: string;
+  customTimeline?: string | null;
+  status: CareerGoalStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export const careerGoals = careerGoalsSchema.table('career_goals', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').notNull(),
-  targetRole: varchar('target_role', { length: 255 }).notNull(),
-  targetCompanies: text('target_companies')
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-  timeline: varchar('timeline', { length: 50 }).notNull(),
-  customTimeline: varchar('custom_timeline', { length: 100 }),
-  status: varchar('status', { length: 50 })
-    .$type<CareerGoalStatus>()
-    .notNull()
-    .default(CareerGoalStatus.ACTIVE),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+const careerGoalSchema = new Schema<ICareerGoalDocument>(
+  {
+    userId: { type: String, required: true, index: true },
+    targetRole: { type: String, required: true },
+    targetCompanies: { type: [String], default: [] },
+    timeline: { type: String, required: true },
+    customTimeline: { type: String, default: null },
+    status: {
+      type: String,
+      enum: Object.values(CareerGoalStatus),
+      required: true,
+      default: CareerGoalStatus.ACTIVE,
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  {
+    timestamps: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
+);
+
+careerGoalSchema.virtual('id').get(function (this: ICareerGoalDocument) {
+  return this._id.toHexString();
 });
 
-export type CareerGoalRow = typeof careerGoals.$inferSelect;
-export type NewCareerGoalRow = typeof careerGoals.$inferInsert;
+// Compound index for fast active goal lookups per user
+careerGoalSchema.index({ userId: 1, status: 1 });
+
+export const CareerGoalModel =
+  mongoose.models.CareerGoal || mongoose.model<ICareerGoalDocument>('CareerGoal', careerGoalSchema);
+
+export type CareerGoalRow = {
+  id: string;
+  userId: string;
+  targetRole: string;
+  targetCompanies: string[];
+  timeline: string;
+  customTimeline?: string | null;
+  status: CareerGoalStatus;
+  createdAt: Date;
+  updatedAt: Date;
+};

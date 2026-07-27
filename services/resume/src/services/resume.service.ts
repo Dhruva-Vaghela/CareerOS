@@ -1,6 +1,4 @@
-import { eq, and } from 'drizzle-orm';
-import { getDb } from '../db/index.js';
-import { resumes, resumeVersions, ResumeRow } from '../db/schema.js';
+import { ResumeModel, ResumeVersionModel, IResumeDocument } from '../db/schema.js';
 import { Resume, ResumeStatus } from '@careeros/shared-types';
 import { CloudinaryService, UploadResult } from './cloudinary.service.js';
 import { NotFoundError } from '@careeros/errors';
@@ -12,20 +10,17 @@ export class ResumeService {
   private cloudinary = new CloudinaryService();
 
   async getLatestResume(userId: string): Promise<Resume | null> {
-    const { db } = getDb();
-    const rows = await db
-      .select()
-      .from(resumes)
-      .where(and(eq(resumes.userId, userId), eq(resumes.status, ResumeStatus.ACTIVE)))
-      .limit(1);
+    const doc = await ResumeModel.findOne({
+      userId,
+      status: ResumeStatus.ACTIVE,
+    });
 
-    if (rows.length === 0) {
+    if (!doc) {
       return null;
     }
 
-    const domain = this.mapToDomain(rows[0]);
+    const domain = this.mapToDomain(doc);
 
-    // Ensure fallback local preview endpoint is served if secureUrl contains demo mock URL
     if (domain.secureUrl && domain.secureUrl.includes('demo/image/upload')) {
       domain.secureUrl = `/api/v1/resume/file/${domain.id}`;
     }
@@ -34,39 +29,41 @@ export class ResumeService {
   }
 
   async updateSecureUrl(resumeId: string, secureUrl: string): Promise<void> {
-    const { db } = getDb();
-    await db.update(resumes).set({ secureUrl }).where(eq(resumes.id, resumeId));
+    await ResumeModel.updateOne({ _id: resumeId }, { $set: { secureUrl } });
   }
 
   async saveResume(userId: string, uploadData: UploadResult): Promise<Resume> {
-    const { db } = getDb();
     const existing = await this.getLatestResume(userId);
-
     const now = new Date();
-    let row: ResumeRow;
+
+    let doc: IResumeDocument;
 
     if (existing) {
       const nextVersion = existing.version + 1;
-      const [updated] = await db
-        .update(resumes)
-        .set({
-          publicId: uploadData.publicId,
-          secureUrl: uploadData.secureUrl,
-          filename: uploadData.filename,
-          mimeType: uploadData.mimeType,
-          size: uploadData.size,
-          version: nextVersion,
-          status: ResumeStatus.ACTIVE,
-          uploadDate: now,
-          updatedAt: now,
-        })
-        .where(eq(resumes.id, existing.id))
-        .returning();
+      const updatedDoc = await ResumeModel.findOneAndUpdate(
+        { _id: existing.id },
+        {
+          $set: {
+            publicId: uploadData.publicId,
+            secureUrl: uploadData.secureUrl,
+            filename: uploadData.filename,
+            mimeType: uploadData.mimeType,
+            size: uploadData.size,
+            version: nextVersion,
+            status: ResumeStatus.ACTIVE,
+            uploadDate: now,
+            updatedAt: now,
+          },
+        },
+        { new: true, runValidators: true },
+      );
 
-      row = updated;
+      if (!updatedDoc) {
+        throw new Error('Failed to update resume document');
+      }
+      doc = updatedDoc;
 
-      // Add to versions history
-      await db.insert(resumeVersions).values({
+      await ResumeVersionModel.create({
         resumeId: existing.id,
         version: nextVersion,
         publicId: uploadData.publicId,
@@ -77,29 +74,26 @@ export class ResumeService {
         createdAt: now,
       });
 
-      logger.info({ userId, resumeId: row.id, version: nextVersion }, 'Updated resume metadata');
+      logger.info({ userId, resumeId: doc.id, version: nextVersion }, 'Updated resume metadata');
     } else {
-      const [inserted] = await db
-        .insert(resumes)
-        .values({
-          userId,
-          publicId: uploadData.publicId,
-          secureUrl: uploadData.secureUrl,
-          filename: uploadData.filename,
-          mimeType: uploadData.mimeType,
-          size: uploadData.size,
-          version: 1,
-          status: ResumeStatus.ACTIVE,
-          uploadDate: now,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
+      doc = await ResumeModel.create({
+        userId,
+        publicId: uploadData.publicId,
+        secureUrl: uploadData.secureUrl,
+        filename: uploadData.filename,
+        mimeType: uploadData.mimeType,
+        size: uploadData.size,
+        version: 1,
+        status: ResumeStatus.ACTIVE,
+        uploadDate: now,
+        createdAt: now,
+        updatedAt: now,
+      });
 
-      row = inserted;
+      const resumeIdStr = doc._id.toHexString();
 
-      await db.insert(resumeVersions).values({
-        resumeId: row.id,
+      await ResumeVersionModel.create({
+        resumeId: resumeIdStr,
         version: 1,
         publicId: uploadData.publicId,
         secureUrl: uploadData.secureUrl,
@@ -109,12 +103,11 @@ export class ResumeService {
         createdAt: now,
       });
 
-      logger.info({ userId, resumeId: row.id }, 'Created initial resume metadata');
+      logger.info({ userId, resumeId: resumeIdStr }, 'Created initial resume metadata');
     }
 
-    const domain = this.mapToDomain(row);
+    const domain = this.mapToDomain(doc);
 
-    // If Cloudinary returned mock fallback, persist local file preview endpoint in DB
     if (uploadData.secureUrl.includes('demo/image/upload')) {
       const localUrl = `/api/v1/resume/file/${domain.id}`;
       await this.updateSecureUrl(domain.id, localUrl);
@@ -125,7 +118,6 @@ export class ResumeService {
   }
 
   async deleteResume(userId: string, resumeId?: string): Promise<boolean> {
-    const { db } = getDb();
     const active = await this.getLatestResume(userId);
 
     if (!active) {
@@ -136,30 +128,29 @@ export class ResumeService {
       throw new NotFoundError('Resume ID mismatch');
     }
 
-    // Delete asset from Cloudinary
     await this.cloudinary.deleteAsset(active.publicId);
 
-    // Delete metadata record from DB
-    await db.delete(resumes).where(eq(resumes.id, active.id));
+    await ResumeModel.deleteOne({ _id: active.id });
+    await ResumeVersionModel.deleteMany({ resumeId: active.id });
 
     logger.info({ userId, resumeId: active.id }, 'Deleted resume metadata and asset');
     return true;
   }
 
-  private mapToDomain(row: ResumeRow): Resume {
+  private mapToDomain(doc: IResumeDocument): Resume {
     return {
-      id: row.id,
-      userId: row.userId,
-      publicId: row.publicId,
-      secureUrl: row.secureUrl,
-      filename: row.filename,
-      mimeType: row.mimeType,
-      size: row.size,
-      version: row.version,
-      status: row.status as ResumeStatus,
-      uploadDate: row.uploadDate,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      id: doc.id || doc._id.toHexString(),
+      userId: doc.userId,
+      publicId: doc.publicId,
+      secureUrl: doc.secureUrl,
+      filename: doc.filename,
+      mimeType: doc.mimeType,
+      size: doc.size,
+      version: doc.version,
+      status: doc.status as ResumeStatus,
+      uploadDate: doc.uploadDate,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
     };
   }
 }

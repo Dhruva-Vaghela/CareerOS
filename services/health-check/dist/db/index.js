@@ -1,11 +1,15 @@
 import { createDatabaseConnection } from '@careeros/database';
 import { config } from '../config.js';
-import * as schema from './schema.js';
-let connection = null;
-export function getDb() {
-    if (!connection) {
-        connection = createDatabaseConnection(config.DATABASE_URL, {}, schema);
+let connectionPromise = null;
+export async function initDb() {
+    if (!connectionPromise) {
+        connectionPromise = createDatabaseConnection(config.DATABASE_URL);
     }
-    return connection;
+    return connectionPromise;
+}
+export function getDb() {
+    return {
+        initDb,
+    };
 }
 //# sourceMappingURL=index.js.map

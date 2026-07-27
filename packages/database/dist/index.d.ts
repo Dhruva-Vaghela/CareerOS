@@ -1,9 +1,10 @@
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
-export interface DatabaseConnection<TSchema extends Record<string, unknown> = Record<string, unknown>> {
-    db: NodePgDatabase<TSchema>;
-    pool: pg.Pool;
+import mongoose from 'mongoose';
+export interface DatabaseConnection {
+    connection: mongoose.Connection;
+    mongoose: typeof mongoose;
 }
-export declare function createDatabaseConnection<TSchema extends Record<string, unknown> = Record<string, unknown>>(connectionString: string, options?: pg.PoolConfig, schema?: TSchema): DatabaseConnection<TSchema>;
-export declare function testConnection(pool: pg.Pool): Promise<boolean>;
+export declare function createDatabaseConnection(connectionString: string, options?: mongoose.ConnectOptions): Promise<DatabaseConnection>;
+export declare function testConnection(conn?: mongoose.Connection): Promise<boolean>;
+export declare function disconnectDatabase(): Promise<void>;
+export { mongoose };
 //# sourceMappingURL=index.d.ts.map

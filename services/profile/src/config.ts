@@ -9,7 +9,7 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3002'),
-  DATABASE_URL: z.string().default('postgresql://postgres:postgres@localhost:5432/careeros'),
+  DATABASE_URL: z.string().default('mongodb://localhost:27017/careeros'),
   JWT_SECRET: z.string().default('local-dev-secret-do-not-use-in-prod'),
 });
 

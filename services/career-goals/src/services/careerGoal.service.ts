@@ -1,6 +1,4 @@
-import { eq, and } from 'drizzle-orm';
-import { getDb } from '../db/index.js';
-import { careerGoals, CareerGoalRow } from '../db/schema.js';
+import { CareerGoalModel, ICareerGoalDocument } from '../db/schema.js';
 import { CareerGoalStatus, CareerGoal } from '@careeros/shared-types';
 import { getEventBus } from '../bus.js';
 import { createLogger } from '@careeros/logger';
@@ -16,71 +14,48 @@ export interface UpsertGoalInput {
 
 export class CareerGoalService {
   async getActiveGoal(userId: string): Promise<CareerGoal | null> {
-    const { db } = getDb();
-    const rows = await db
-      .select()
-      .from(careerGoals)
-      .where(
-        and(
-          eq(careerGoals.userId, userId),
-          eq(careerGoals.status, CareerGoalStatus.ACTIVE),
-        ),
-      )
-      .limit(1);
+    const doc = await CareerGoalModel.findOne({
+      userId,
+      status: CareerGoalStatus.ACTIVE,
+    });
 
-    if (rows.length === 0) {
+    if (!doc) {
       return null;
     }
 
-    return this.mapToDomain(rows[0]);
+    return this.mapToDomain(doc);
   }
 
   async upsertGoal(userId: string, input: UpsertGoalInput): Promise<CareerGoal> {
-    const { db } = getDb();
-    const existing = await this.getActiveGoal(userId);
-
     const targetCompanies = input.targetCompanies || [];
     const now = new Date();
 
-    let row: CareerGoalRow;
-
-    if (existing) {
-      const [updated] = await db
-        .update(careerGoals)
-        .set({
+    const doc = await CareerGoalModel.findOneAndUpdate(
+      { userId, status: CareerGoalStatus.ACTIVE },
+      {
+        $set: {
           targetRole: input.targetRole,
-          targetCompanies: targetCompanies,
+          targetCompanies,
           timeline: input.timeline,
           customTimeline: input.customTimeline || null,
           updatedAt: now,
-        })
-        .where(eq(careerGoals.id, existing.id))
-        .returning();
-
-      row = updated;
-      logger.info({ userId, goalId: row.id }, 'Updated career goal');
-    } else {
-      const [inserted] = await db
-        .insert(careerGoals)
-        .values({
+        },
+        $setOnInsert: {
           userId,
-          targetRole: input.targetRole,
-          targetCompanies: targetCompanies,
-          timeline: input.timeline,
-          customTimeline: input.customTimeline || null,
           status: CareerGoalStatus.ACTIVE,
           createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
+        },
+      },
+      { upsert: true, new: true, runValidators: true },
+    );
 
-      row = inserted;
-      logger.info({ userId, goalId: row.id }, 'Created new career goal');
+    if (!doc) {
+      throw new Error('Failed to upsert career goal document');
     }
 
-    const domainGoal = this.mapToDomain(row);
+    const domainGoal = this.mapToDomain(doc);
+    logger.info({ userId, goalId: domainGoal.id }, 'Upserted career goal');
 
-    // Publish domain event
     try {
       const bus = getEventBus();
       await bus.publish({
@@ -103,17 +78,17 @@ export class CareerGoalService {
     return domainGoal;
   }
 
-  private mapToDomain(row: CareerGoalRow): CareerGoal {
+  private mapToDomain(doc: ICareerGoalDocument): CareerGoal {
     return {
-      id: row.id,
-      userId: row.userId,
-      targetRole: row.targetRole,
-      targetCompanies: row.targetCompanies || [],
-      targetTimeline: row.timeline,
-      customTimeline: row.customTimeline || undefined,
-      status: row.status as CareerGoalStatus,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      id: doc.id || doc._id.toHexString(),
+      userId: doc.userId,
+      targetRole: doc.targetRole,
+      targetCompanies: doc.targetCompanies || [],
+      targetTimeline: doc.timeline,
+      customTimeline: doc.customTimeline || undefined,
+      status: doc.status as CareerGoalStatus,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
     };
   }
 }

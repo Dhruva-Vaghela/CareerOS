@@ -4,8 +4,8 @@ import { z } from 'zod';
 import { formatSuccess, ConflictError } from '@careeros/errors';
 import { validateRequest } from '@careeros/validation';
 import { testConnection } from '@careeros/database';
-import { getDb } from '../db/index.js';
-import { systemChecks } from '../db/schema.js';
+import { initDb } from '../db/index.js';
+import { SystemCheckModel } from '../db/schema.js';
 import { eventBus } from '../bus.js';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 
@@ -14,23 +14,26 @@ const router = Router();
 // 1. GET /health
 router.get('/health', async (req: AuthenticatedRequest, res: Response, next) => {
   try {
-    const { db, pool } = getDb();
-    const isDbConnected = await testConnection(pool);
+    const { connection } = await initDb();
+    const isDbConnected = await testConnection(connection);
 
     if (!isDbConnected) {
       throw new Error('Database connection failed');
     }
 
-    // Insert record into system Checks table to verify Drizzle schema & write capabilities
-    const [inserted] = await db.insert(systemChecks).values({
+    const inserted = await SystemCheckModel.create({
       status: 'OK',
-    }).returning();
+    });
 
     res.json(
       formatSuccess({
         status: 'UP',
         database: 'CONNECTED',
-        healthCheckRecord: inserted,
+        healthCheckRecord: {
+          id: inserted._id.toHexString(),
+          status: inserted.status,
+          checkedAt: inserted.checkedAt,
+        },
       }),
     );
   } catch (err) {
@@ -52,7 +55,6 @@ router.post(
       const { message, priority } = req.body;
       const traceId = (req.headers['x-trace-id'] as string) || crypto.randomUUID();
 
-      // Publish event to Event Bus to test publisher
       await eventBus.publish({
         name: 'system.healthy',
         metadata: {
@@ -81,7 +83,6 @@ router.post(
 
 // 3. GET /test-error
 router.get('/test-error', (req, res, next) => {
-  // Test error mapping to global error handler
   next(
     new ConflictError(
       'Cannot modify this roadmap module because it contains mandatory dependencies',

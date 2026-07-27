@@ -4,8 +4,8 @@ import { createLogger } from '@careeros/logger';
 import { globalErrorHandler } from '@careeros/errors';
 import { parseAuth } from './middleware/auth.js';
 import { config } from './config.js';
-import { getDb } from './db/index.js';
-import { testConnection } from '@careeros/database';
+import { initDb } from './db/index.js';
+import { testConnection, disconnectDatabase } from '@careeros/database';
 import { authRouter } from './routes/auth.js';
 
 const logger = createLogger('auth-service');
@@ -14,8 +14,8 @@ async function bootstrap() {
   logger.info({ env: config.NODE_ENV }, 'Starting CareerOS Auth service...');
 
   try {
-    const { pool } = getDb();
-    const isConnected = await testConnection(pool);
+    const { connection } = await initDb();
+    const isConnected = await testConnection(connection);
     if (!isConnected) {
       logger.error('Failed to establish database connection during bootstrap');
     }
@@ -41,9 +41,8 @@ async function bootstrap() {
     logger.info('Shutting down gracefully...');
     server.close(async () => {
       logger.info('HTTP server closed');
-      const { pool } = getDb();
-      await pool.end();
-      logger.info('Database pool closed');
+      await disconnectDatabase();
+      logger.info('Database connection closed');
       process.exit(0);
     });
   };
@@ -52,7 +51,6 @@ async function bootstrap() {
   process.on('SIGINT', shutdown);
 }
 
-// In test environment, don't start the server immediately to allow vitest to run
 if (process.env.NODE_ENV !== 'test') {
   bootstrap().catch((err) => {
     logger.fatal({ err }, 'Service failed to bootstrap');
@@ -60,5 +58,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// Export app/bootstrap for testing if needed
 export { bootstrap };

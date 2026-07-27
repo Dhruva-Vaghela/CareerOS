@@ -1,4 +1,6 @@
 import { DatabaseConnection } from '@careeros/database';
-import * as schema from './schema.js';
-export declare function getDb(): DatabaseConnection<typeof schema>;
+export declare function initDb(): Promise<DatabaseConnection>;
+export declare function getDb(): {
+    initDb: typeof initDb;
+};
 //# sourceMappingURL=index.d.ts.map

@@ -1,33 +1,54 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
+import mongoose from 'mongoose';
 import { createLogger } from '@careeros/logger';
 const logger = createLogger('database-client');
-export function createDatabaseConnection(connectionString, options = {}, schema) {
-    logger.info('Initializing PostgreSQL connection pool...');
-    const pool = new pg.Pool({
-        connectionString,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
-        ...options,
-    });
-    pool.on('error', (err) => {
-        logger.error({ err }, 'Unexpected error on idle database client');
-    });
-    const db = drizzle(pool, schema ? { schema } : undefined);
-    return { db, pool };
-}
-export async function testConnection(pool) {
+export async function createDatabaseConnection(connectionString, options = {}) {
+    logger.info('Initializing MongoDB connection via Mongoose...');
     try {
-        const client = await pool.connect();
-        await client.query('SELECT 1');
-        client.release();
-        logger.info('Database connectivity test succeeded');
-        return true;
+        const conn = await mongoose.connect(connectionString, {
+            serverSelectionTimeoutMS: 5000,
+            autoIndex: true,
+            ...options,
+        });
+        logger.info('Successfully connected to MongoDB');
+        mongoose.connection.on('error', (err) => {
+            logger.error({ err }, 'Unexpected error on MongoDB connection');
+        });
+        mongoose.connection.on('disconnected', () => {
+            logger.warn('MongoDB connection disconnected');
+        });
+        return {
+            connection: conn.connection,
+            mongoose: conn,
+        };
+    }
+    catch (error) {
+        logger.error({ err: error }, 'Failed to connect to MongoDB');
+        throw error;
+    }
+}
+export async function testConnection(conn) {
+    try {
+        const targetConnection = conn || mongoose.connection;
+        if (targetConnection.readyState === 1) {
+            logger.info('Database connectivity test succeeded (readyState: 1)');
+            return true;
+        }
+        logger.warn(`Database connectivity test returned readyState ${targetConnection.readyState}`);
+        return false;
     }
     catch (error) {
         logger.error({ err: error }, 'Database connectivity test failed');
         return false;
     }
 }
+export async function disconnectDatabase() {
+    try {
+        await mongoose.disconnect();
+        logger.info('Disconnected from MongoDB');
+    }
+    catch (error) {
+        logger.error({ err: error }, 'Error disconnecting from MongoDB');
+    }
+}
+export { mongoose };
 //# sourceMappingURL=index.js.map

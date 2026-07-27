@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ContextBuilderService } from './services/contextBuilder.service.js';
 import { DigitalTwinService } from './services/digitalTwin.service.js';
 import {
-  TwinNodeType,
   VerificationStatus,
   ConfidenceLevel,
 } from '@careeros/shared-types';

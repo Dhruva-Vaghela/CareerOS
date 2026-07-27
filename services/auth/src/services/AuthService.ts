@@ -1,10 +1,8 @@
-import { getDb } from '../db/index.js';
-import { users, sessions } from '../db/schema.js';
+import { UserModel, SessionModel } from '../db/schema.js';
 import { PasswordService } from './PasswordService.js';
 import { JwtService } from './JwtService.js';
 import { UnauthorizedError, ConflictError } from '@careeros/errors';
 import { eventBus } from '../bus.js';
-import { eq, and, gt } from 'drizzle-orm';
 import crypto from 'crypto';
 
 export class AuthService {
@@ -12,48 +10,43 @@ export class AuthService {
   private jwtService = new JwtService();
 
   async register(email: string, passwordRaw: string) {
-    const { db } = getDb();
-
-    // Check if user exists
-    const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (existing.length > 0) {
+    const existing = await UserModel.findOne({ email: email.toLowerCase() });
+    if (existing) {
       throw new ConflictError('User already exists', 'USER_ALREADY_EXISTS');
     }
 
     const passwordHash = await this.passwordService.hashPassword(passwordRaw);
 
-    // Insert user
-    const [newUser] = await db.insert(users).values({
-      email,
+    const newUser = await UserModel.create({
+      email: email.toLowerCase(),
       passwordHash,
       authProvider: 'LOCAL',
-    }).returning();
+    });
 
-    // Publish event
+    const userIdStr = newUser._id.toHexString();
+
     await eventBus.publish({
       name: 'user.registered',
       metadata: {
         eventId: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
         traceId: 'internal-registration',
-        userId: newUser.id,
+        userId: userIdStr,
       },
       payload: {
-        userId: newUser.id,
+        userId: userIdStr,
         email: newUser.email,
       },
     });
 
     return {
-      id: newUser.id,
+      id: userIdStr,
       email: newUser.email,
     };
   }
 
   async login(email: string, passwordRaw: string) {
-    const { db } = getDb();
-
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
     if (!user) {
       throw new UnauthorizedError('Invalid credentials');
     }
@@ -63,14 +56,15 @@ export class AuthService {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const accessToken = this.jwtService.generateAccessToken(user.id);
+    const userIdStr = user._id.toHexString();
+    const accessToken = this.jwtService.generateAccessToken(userIdStr);
     const { token: refreshToken, hash: refreshTokenHash } = this.jwtService.generateRefreshToken();
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
-    await db.insert(sessions).values({
-      userId: user.id,
+    await SessionModel.create({
+      userId: userIdStr,
       refreshTokenHash,
       expiresAt,
     });
@@ -81,10 +75,10 @@ export class AuthService {
         eventId: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
         traceId: 'internal-login',
-        userId: user.id,
+        userId: userIdStr,
       },
       payload: {
-        userId: user.id,
+        userId: userIdStr,
         timestamp: new Date().toISOString(),
       },
     });
@@ -93,39 +87,33 @@ export class AuthService {
       accessToken,
       refreshToken,
       user: {
-        id: user.id,
+        id: userIdStr,
         email: user.email,
       },
     };
   }
 
   async refresh(refreshToken: string) {
-    const { db } = getDb();
-    
     const hash = this.jwtService.hashRefreshToken(refreshToken);
-    
-    const [session] = await db.select()
-      .from(sessions)
-      .where(and(
-        eq(sessions.refreshTokenHash, hash),
-        gt(sessions.expiresAt, new Date())
-      )).limit(1);
+
+    const session = await SessionModel.findOne({
+      refreshTokenHash: hash,
+      expiresAt: { $gt: new Date() },
+    });
 
     if (!session) {
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
-    // Generate new access token
     const accessToken = this.jwtService.generateAccessToken(session.userId);
 
-    // Rotate refresh token
     const { token: newRefreshToken, hash: newRefreshTokenHash } = this.jwtService.generateRefreshToken();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Delete old session and create new one (rotation)
-    await db.delete(sessions).where(eq(sessions.id, session.id));
-    await db.insert(sessions).values({
+    // Delete old session and create new rotated session
+    await SessionModel.deleteOne({ _id: session._id });
+    await SessionModel.create({
       userId: session.userId,
       refreshTokenHash: newRefreshTokenHash,
       expiresAt,
@@ -138,8 +126,7 @@ export class AuthService {
   }
 
   async logout(refreshToken: string) {
-    const { db } = getDb();
     const hash = this.jwtService.hashRefreshToken(refreshToken);
-    await db.delete(sessions).where(eq(sessions.refreshTokenHash, hash));
+    await SessionModel.deleteOne({ refreshTokenHash: hash });
   }
 }

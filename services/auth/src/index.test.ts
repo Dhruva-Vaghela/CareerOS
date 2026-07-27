@@ -2,13 +2,12 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import cors from 'cors';
-import { getDb } from './db/index.js';
-import { testConnection } from '@careeros/database';
+import { initDb } from './db/index.js';
+import { testConnection, disconnectDatabase } from '@careeros/database';
 import { authRouter } from './routes/auth.js';
 import { globalErrorHandler } from '@careeros/errors';
 import { parseAuth } from './middleware/auth.js';
-import { users } from './db/schema.js';
-import { eq } from 'drizzle-orm';
+import { UserModel, SessionModel } from './db/schema.js';
 
 describe('Auth Service Integration Tests', () => {
   let app: express.Application;
@@ -18,7 +17,6 @@ describe('Auth Service Integration Tests', () => {
   const testPassword = 'Password123!';
 
   beforeAll(async () => {
-    // Setup Express App for testing
     app = express();
     app.use(cors());
     app.use(express.json());
@@ -26,17 +24,15 @@ describe('Auth Service Integration Tests', () => {
     app.use('/api/v1/auth', authRouter);
     app.use(globalErrorHandler);
 
-    // Verify DB connection
-    const { pool } = getDb();
-    const isConnected = await testConnection(pool);
+    const { connection } = await initDb();
+    const isConnected = await testConnection(connection);
     expect(isConnected).toBe(true);
   });
 
   afterAll(async () => {
-    const { db, pool } = getDb();
-    // Clean up test data
-    await db.delete(users).where(eq(users.email, testEmail));
-    await pool.end();
+    await UserModel.deleteMany({ email: testEmail.toLowerCase() });
+    await SessionModel.deleteMany({ userId: { $regex: /.*/ } });
+    await disconnectDatabase();
   });
 
   it('should register a new user successfully', async () => {
@@ -46,7 +42,7 @@ describe('Auth Service Integration Tests', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.user.email).toBe(testEmail);
+    expect(res.body.data.user.email).toBe(testEmail.toLowerCase());
     expect(res.body.data.user.id).toBeDefined();
   });
 
@@ -69,7 +65,7 @@ describe('Auth Service Integration Tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
-    
+
     accessToken = res.body.data.accessToken;
     refreshToken = res.body.data.refreshToken;
   });
@@ -85,8 +81,7 @@ describe('Auth Service Integration Tests', () => {
   });
 
   it('should reject protected route /me without token', async () => {
-    const res = await request(app)
-      .get('/api/v1/auth/me');
+    const res = await request(app).get('/api/v1/auth/me');
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -101,9 +96,8 @@ describe('Auth Service Integration Tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
-    expect(res.body.data.refreshToken).not.toBe(refreshToken); // Token rotation
-    
-    // Update tokens for logout test
+    expect(res.body.data.refreshToken).not.toBe(refreshToken);
+
     accessToken = res.body.data.accessToken;
     refreshToken = res.body.data.refreshToken;
   });

@@ -1,9 +1,14 @@
-import { pgSchema, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
-// Define a dedicated schema for isolated boundaries
-export const healthCheckSchema = pgSchema('health_check');
-export const systemChecks = healthCheckSchema.table('system_checks', {
-    id: uuid('id').defaultRandom().primaryKey(),
-    status: varchar('status', { length: 50 }).notNull(),
-    checkedAt: timestamp('checked_at').defaultNow().notNull(),
+import mongoose, { Schema } from 'mongoose';
+const systemCheckSchema = new Schema({
+    status: { type: String, required: true },
+    checkedAt: { type: Date, default: Date.now },
+}, {
+    timestamps: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
 });
+systemCheckSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+export const SystemCheckModel = mongoose.models.SystemCheck || mongoose.model('SystemCheck', systemCheckSchema, 'system_checks');
 //# sourceMappingURL=schema.js.map
