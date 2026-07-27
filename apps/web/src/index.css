@@ -249,7 +249,15 @@ a:hover {
   background-color: var(--color-background);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .auth-hero-panel {
+    display: none !important;
+  }
+  .auth-form-panel {
+    maxWidth: 100% !important;
+    padding: 3rem 1.5rem !important;
+    minHeight: 100vh;
+  }
   .sidebar {
     transform: translateX(-100%);
   }

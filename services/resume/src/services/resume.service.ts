@@ -23,7 +23,19 @@ export class ResumeService {
       return null;
     }
 
-    return this.mapToDomain(rows[0]);
+    const domain = this.mapToDomain(rows[0]);
+
+    // Ensure fallback local preview endpoint is served if secureUrl contains demo mock URL
+    if (domain.secureUrl && domain.secureUrl.includes('demo/image/upload')) {
+      domain.secureUrl = `/api/v1/resume/file/${domain.id}`;
+    }
+
+    return domain;
+  }
+
+  async updateSecureUrl(resumeId: string, secureUrl: string): Promise<void> {
+    const { db } = getDb();
+    await db.update(resumes).set({ secureUrl }).where(eq(resumes.id, resumeId));
   }
 
   async saveResume(userId: string, uploadData: UploadResult): Promise<Resume> {
@@ -100,7 +112,16 @@ export class ResumeService {
       logger.info({ userId, resumeId: row.id }, 'Created initial resume metadata');
     }
 
-    return this.mapToDomain(row);
+    const domain = this.mapToDomain(row);
+
+    // If Cloudinary returned mock fallback, persist local file preview endpoint in DB
+    if (uploadData.secureUrl.includes('demo/image/upload')) {
+      const localUrl = `/api/v1/resume/file/${domain.id}`;
+      await this.updateSecureUrl(domain.id, localUrl);
+      domain.secureUrl = localUrl;
+    }
+
+    return domain;
   }
 
   async deleteResume(userId: string, resumeId?: string): Promise<boolean> {

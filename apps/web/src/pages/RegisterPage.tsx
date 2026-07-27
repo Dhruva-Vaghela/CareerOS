@@ -53,9 +53,9 @@ export function RegisterPage() {
   };
 
   return (
-    <AuthLayout title="Create an account" subtitle="Start your journey with CareerOS">
+    <AuthLayout title="Create an account" subtitle="Start building your Career Digital Twin">
       {error && <Alert type="error" message={error} />}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <Input 
           label="Email address"
           type="email"
@@ -78,12 +78,16 @@ export function RegisterPage() {
           placeholder="••••••••"
           required
         />
-        <Button type="submit" isLoading={isLoading} style={{ marginTop: '0.5rem' }}>
+        <Button type="submit" isLoading={isLoading} style={{ marginTop: '0.5rem', padding: '0.75rem' }}>
           Create account
         </Button>
       </form>
-      <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>
-        Already have an account? <Link to="/login">Sign in</Link>
+
+      <p style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.875rem', color: '#64748b' }}>
+        Already have an account?{' '}
+        <Link to="/login" style={{ color: '#4f46e5', fontWeight: 700 }}>
+          Sign in
+        </Link>
       </p>
     </AuthLayout>
   );
