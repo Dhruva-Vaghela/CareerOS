@@ -11,4 +11,10 @@ Steps:-
 "dev": "concurrently -k -p \"[{name}]\" -n \"AUTH,PROFILE,GOALS,RESUME,TWIN,WEB\" -c \"blue,green,magenta,yellow,cyan,red\" \"cross-env PORT=3001 npx tsx watch services/auth/src/index.ts\" \"cross-env PORT=3002 npx tsx watch services/profile/src/index.ts\" \"cross-env PORT=3003 npx tsx watch services/career-goals/src/index.ts\" \"cross-env PORT=3004 npx tsx watch services/resume/src/index.ts\" \"cross-env PORT=3005 npx tsx watch services/digital-twin/src/index.ts\" \"npm run dev --workspace=@careeros/web\"",
 "dev:services": "concurrently -k -p \"[{name}]\" -n \"AUTH,PROFILE,GOALS,RESUME,TWIN\" -c \"blue,green,magenta,yellow,cyan\" \"cross-env PORT=3001 npx tsx watch services/auth/src/index.ts\" \"cross-env PORT=3002 npx tsx watch services/profile/src/index.ts\" \"cross-env PORT=3003 npx tsx watch services/career-goals/src/index.ts\" \"cross-env PORT=3004 npx tsx watch services/resume/src/index.ts\" \"cross-env PORT=3005 npx tsx watch services/digital-twin/src/index.ts\"",
 
-4. npm run dev
+4. npm run dev (Still the backend won't be connected yet.)
+
+5. Copy .env_Example in a new file inside CareerOS named .env and replace your credentials in it.
+
+6. npm install mongodb
+
+7. npm run dev (Now you will be able to use the website properly (mostly on:-  http://localhost:5173/))
