@@ -44,13 +44,23 @@ Application
 
 - **Application.** The owning business module decides *that* an AI call is needed and *why* (e.g., "generate a roadmap," "evaluate this interview response"). It never talks to an LLM directly.
 - **AI Orchestration Layer.** The single internal entry point every module uses to request AI-generated output. It decides which task template applies, which context partitions are required, and which provider/model to use for that task. No business module constructs a prompt itself.
+- **Task Registry.** A centralized, provider-agnostic catalog of AI task metadata. Each task declares its model alias, prompt-template name, required context, response-schema reference, and retry strategy metadata. The registry does not build prompts, retrieve context, validate responses, or execute retries.
 - **Context Builder.** Assembles the actual context payload for this specific request — pulling only the context partitions relevant to the task (see §4) from the Career Digital Twin and any task-specific sources (e.g., conversation history for the chatbot).
+- **Context Layer.** The stateless Context Builder uses the Task Registry to select declared sources only, adapts business-service results into provider-independent data, serializes them deterministically, and removes empty or duplicate values. It neither owns nor caches user data, and it never receives an unscoped Digital Twin payload.
 - **AI Provider Abstraction.** Translates the orchestration layer's task + context into a call against whichever LLM provider is currently configured, and translates the raw response back into a provider-agnostic shape (see §3).
 - **LLM.** The underlying model. It is treated as a stateless, swappable computation resource — never a place where persistent product state lives.
 - **Response Validator.** Confirms the LLM's output matches the expected structured schema for that task before it's allowed anywhere near business logic (see §6).
 - **Application.** The originating module receives validated, structured output and applies its own business rules to it (e.g., tagging roadmap nodes Mandatory/Recommended/Optional, persisting an interview evaluation) exactly as it would with any other computed input.
 
 This pipeline is uniform across all five AI-powered modules listed in §7 — no module is permitted to build a parallel, ad hoc path from "application" straight to "LLM."
+
+### 2.1 Execution-Layer Boundary
+
+The reusable execution layer is the narrow coordination path `AIRequest → Task Registry → Provider Factory → Provider → AIResponse`. For every request, the orchestrator resolves the registered task, resolves its provider-neutral model alias through centralized configuration, generates an execution ID, measures end-to-end execution duration, and delegates the provider call. It does not assemble context or prompts, validate output, retry, persist data, or contain business rules. Those responsibilities remain in their dedicated layers.
+
+### 2.2 Context-Layer Boundary
+
+The context path is `AIRequest → Task Registry → Context Builder → AIOrchestrator`. A business caller supplies fresh, task-relevant results from public business-service interfaces. The Context Selector admits only sources declared for the task; the Digital Twin adapter is additionally given the task's declared partitions, so a complete Twin is never passed through. Adapters only reshape data, the serializer only normalizes it, and the compressor only removes token-inefficient redundancy. Prompt construction, validation, retries, telemetry, caching, and business decisions remain outside this layer.
 
 ---
 

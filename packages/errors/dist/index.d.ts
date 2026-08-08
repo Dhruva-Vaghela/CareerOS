@@ -26,6 +26,24 @@ export declare class ConflictError extends AppError {
 export declare class DatabaseError extends AppError {
     constructor(message?: string, details?: unknown);
 }
+export declare class AIError extends AppError {
+    constructor(message: string, code: string, details?: unknown);
+}
+export declare class ConfigurationError extends AIError {
+    constructor(message: string, details?: unknown);
+}
+export declare class ProviderError extends AIError {
+    constructor(message: string, details?: unknown);
+}
+export declare class AuthenticationError extends AIError {
+    constructor(message?: string);
+}
+export declare class TimeoutError extends AIError {
+    constructor(message?: string);
+}
+export declare class UnsupportedProviderError extends AIError {
+    constructor(provider: string);
+}
 export interface ApiResponse<T = unknown> {
     success: boolean;
     data?: T;

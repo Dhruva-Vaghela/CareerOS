@@ -50,6 +50,36 @@ export class DatabaseError extends AppError {
         super(message, 500, 'DATABASE_ERROR', details);
     }
 }
+export class AIError extends AppError {
+    constructor(message, code, details) {
+        super(message, 502, code, details);
+    }
+}
+export class ConfigurationError extends AIError {
+    constructor(message, details) {
+        super(message, 'AI_CONFIGURATION_ERROR', details);
+    }
+}
+export class ProviderError extends AIError {
+    constructor(message, details) {
+        super(message, 'AI_PROVIDER_ERROR', details);
+    }
+}
+export class AuthenticationError extends AIError {
+    constructor(message = 'AI provider authentication failed') {
+        super(message, 'AI_AUTHENTICATION_ERROR');
+    }
+}
+export class TimeoutError extends AIError {
+    constructor(message = 'AI provider request timed out') {
+        super(message, 'AI_TIMEOUT_ERROR');
+    }
+}
+export class UnsupportedProviderError extends AIError {
+    constructor(provider) {
+        super(`AI provider "${provider}" is not supported.`, 'AI_UNSUPPORTED_PROVIDER');
+    }
+}
 export function formatSuccess(data) {
     return {
         success: true,

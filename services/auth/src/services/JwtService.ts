@@ -12,7 +12,7 @@ export interface TokenPayload {
 export class JwtService {
   generateAccessToken(userId: string): string {
     return jwt.sign({ userId }, config.JWT_SECRET, {
-      expiresIn: config.JWT_EXPIRES_IN,
+      expiresIn:'15m',
     });
   }
 
@@ -42,13 +42,13 @@ export class JwtService {
     return null;
   }
 
-  generateRefreshTokenHash(): string {
-    // Generate a random 64 byte hex string as refresh token
-    const token = crypto.randomBytes(64).toString('hex');
-    // We hash it to store in DB so that even if DB is compromised, refresh tokens aren't immediately usable
-    const hash = crypto.createHash('sha256').update(token).digest('hex');
-    return { token, hash };
-  }
+  // generateRefreshTokenHash(): string {
+  //   // Generate a random 64 byte hex string as refresh token
+  //   const token = crypto.randomBytes(64).toString('hex');
+  //   // We hash it to store in DB so that even if DB is compromised, refresh tokens aren't immediately usable
+  //   const hash = crypto.createHash('sha256').update(token).digest('hex');
+  //   return { token, hash };
+  // }
 
   generateRefreshToken(): { token: string; hash: string } {
     const token = crypto.randomBytes(64).toString('hex');
