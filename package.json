@@ -12,10 +12,10 @@
     "services/*"
   ],
   "scripts": {
-    "prebuild": "rimraf \"packages/*/dist\" \"services/*/dist\"",
+    "prebuild": "rimraf --glob \"packages/*/dist\" \"services/*/dist\"",
     "build": "tsc -b",
-    "dev": "concurrently -k -p \"[{name}]\" -n \"AUTH,PROFILE,GOALS,RESUME,TWIN,WEB\" -c \"blue,green,magenta,yellow,cyan,red\" \"PORT=3001 npx tsx watch services/auth/src/index.ts\" \"PORT=3002 npx tsx watch services/profile/src/index.ts\" \"PORT=3003 npx tsx watch services/career-goals/src/index.ts\" \"PORT=3004 npx tsx watch services/resume/src/index.ts\" \"PORT=3005 npx tsx watch services/digital-twin/src/index.ts\" \"npm run dev --workspace=@careeros/web\"",
-    "dev:services": "concurrently -k -p \"[{name}]\" -n \"AUTH,PROFILE,GOALS,RESUME,TWIN\" -c \"blue,green,magenta,yellow,cyan\" \"PORT=3001 npx tsx watch services/auth/src/index.ts\" \"PORT=3002 npx tsx watch services/profile/src/index.ts\" \"PORT=3003 npx tsx watch services/career-goals/src/index.ts\" \"PORT=3004 npx tsx watch services/resume/src/index.ts\" \"PORT=3005 npx tsx watch services/digital-twin/src/index.ts\"",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"AUTH,PROFILE,GOALS,RESUME,TWIN,WEB\" -c \"blue,green,magenta,yellow,cyan,red\" \"cross-env PORT=3001 npx tsx watch services/auth/src/index.ts\" \"cross-env PORT=3002 npx tsx watch services/profile/src/index.ts\" \"cross-env PORT=3003 npx tsx watch services/career-goals/src/index.ts\" \"cross-env PORT=3004 npx tsx watch services/resume/src/index.ts\" \"cross-env PORT=3005 npx tsx watch services/digital-twin/src/index.ts\" \"npm run dev --workspace=@careeros/web\"",
+    "dev:services": "concurrently -k -p \"[{name}]\" -n \"AUTH,PROFILE,GOALS,RESUME,TWIN\" -c \"blue,green,magenta,yellow,cyan\" \"cross-env PORT=3001 npx tsx watch services/auth/src/index.ts\" \"cross-env PORT=3002 npx tsx watch services/profile/src/index.ts\" \"cross-env PORT=3003 npx tsx watch services/career-goals/src/index.ts\" \"cross-env PORT=3004 npx tsx watch services/resume/src/index.ts\" \"cross-env PORT=3005 npx tsx watch services/digital-twin/src/index.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint \"{packages,services}/**/*.ts\"",
@@ -33,7 +33,8 @@
     "rimraf": "^5.0.5",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
-    "vitest": "^1.3.1"
+    "vitest": "^1.3.1",
+    "cross-env": "^10.0.0"
   },
   "dependencies": {
     "mongodb": "^7.5.0",
