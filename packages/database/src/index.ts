@@ -1,7 +1,38 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import { createLogger } from '@careeros/logger';
 
 const logger = createLogger('database-client');
+
+function configureDns(connectionString: string) {
+  // Check if explicit DNS servers are configured via env
+  if (process.env.DNS_SERVERS) {
+    try {
+      const servers = process.env.DNS_SERVERS.split(',').map(s => s.trim()).filter(Boolean);
+      if (servers.length > 0) {
+        logger.info(`Setting custom DNS servers from environment: ${servers.join(', ')}`);
+        dns.setServers(servers);
+        return;
+      }
+    } catch (err) {
+      logger.error({ err }, 'Failed to set custom DNS servers from DNS_SERVERS env variable');
+    }
+  }
+
+  // Fallback for mongodb+srv connections when Node's DNS resolver gets stuck with only loopback
+  if (connectionString.startsWith('mongodb+srv://')) {
+    try {
+      const servers = dns.getServers();
+      const isLoopbackOnly = servers.every(ip => ip === '127.0.0.1' || ip === '::1' || ip === 'localhost');
+      if (isLoopbackOnly) {
+        logger.warn('Detected local loopback only (127.0.0.1) in Node DNS servers, which often causes ECONNREFUSED for mongodb+srv connections. Falling back to public DNS resolvers (1.1.1.1, 8.8.8.8)...');
+        dns.setServers(['1.1.1.1', '8.8.8.8']);
+      }
+    } catch (err) {
+      logger.error({ err }, 'Failed to check or set fallback DNS servers');
+    }
+  }
+}
 
 export interface DatabaseConnection {
   connection: mongoose.Connection;
@@ -12,6 +43,7 @@ export async function createDatabaseConnection(
   connectionString: string,
   options: mongoose.ConnectOptions = {},
 ): Promise<DatabaseConnection> {
+  configureDns(connectionString);
   logger.info('Initializing MongoDB connection via Mongoose...');
 
   try {

@@ -58,7 +58,7 @@ describe('PromptManager', () => {
   it('loads, resolves, and renders a final prompt without invoking a provider', async () => {
     const prepared = await new PromptManager().prepare(request);
 
-    expect(prepared.input.content).toBe(
+    expect(prepared.input.content.replace(/\r\n/g, '\n')).toBe(
       'Task: ROADMAP_GENERATION\nContext: {"digitalTwin":{"skillState":["TypeScript"]},"profile":{"targetRole":"Backend Engineer"}}\nInput: Generate a roadmap.\n',
     );
     expect(prepared.metadata).toMatchObject({
