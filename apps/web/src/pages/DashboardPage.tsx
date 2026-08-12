@@ -18,6 +18,8 @@ import {
   Calendar,
   Building,
   Eye,
+  Activity,
+  Terminal,
 } from 'lucide-react';
 
 interface ResumeData {
@@ -157,86 +159,98 @@ export function DashboardPage() {
 
   return (
     <SidebarLayout activeTab={activeTab} onTabChange={handleTabChange}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1140px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {error && <Alert type="error" message={error} />}
 
-        {/* Overview Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        {/* Technical Header Banner */}
+        <div
+          className="cockpit-panel animate-reveal"
+          style={{
+            padding: '1.75rem 2rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1.25rem',
+            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(8, 145, 178, 0.04) 100%)',
+          }}
+        >
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+              <span className="tech-badge tech-badge-indigo">
+                <Terminal size={12} /> INTERVIEW COCKPIT v1.0
+              </span>
+              <span className="tech-badge tech-badge-emerald">
+                <Activity size={12} className="animate-pulse-glow" /> SYSTEM ACTIVE
+              </span>
+            </div>
+            <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
               {activeTab === 'digital-twin'
                 ? 'Career Digital Twin Engine'
                 : activeTab === 'resume'
-                ? 'Resume Foundation'
+                ? 'Resume Foundation Center'
                 : activeTab === 'career-goals'
                 ? 'Career Goals & Timeline'
-                : 'Dashboard Overview'}
+                : 'Interview Command Center'}
             </h1>
-            <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-              Autonomous AI evidence system for {profile?.fullName || 'User'}
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+              Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong>
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <Button onClick={() => navigate('/profile')} variant="secondary" style={{ width: 'auto' }}>
-              <UserIcon size={16} style={{ marginRight: '0.5rem' }} /> Profile
+              <UserIcon size={16} style={{ marginRight: '0.5rem' }} /> Developer Profile
             </Button>
           </div>
         </div>
 
-        {/* Tab 1: Dashboard Overview & Digital Twin */}
+        {/* Tab 1: Dashboard Overview & Digital Twin Engine */}
         {(activeTab === 'dashboard' || activeTab === 'digital-twin') && (
-          <div style={{ marginBottom: '2rem' }}>
+          <div className="animate-reveal stagger-1">
             <DigitalTwinGraph accessToken={accessToken} />
           </div>
         )}
 
-        {/* Tab 2: Career Goal & Timeline Card */}
+        {/* Tab 2: Career Goal & Timeline Architecture */}
         {(activeTab === 'dashboard' || activeTab === 'career-goals') && goal && (
           <div
-            className="card-3d"
+            className="cockpit-panel animate-reveal stagger-2"
             style={{
               padding: '1.75rem',
-              marginBottom: '2rem',
-              background: '#ffffff',
             }}
           >
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
               <Briefcase size={20} color="#4f46e5" /> Career Goal & Timeline Architecture
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>Target Role</span>
-                <strong style={{ fontSize: '1.1rem', color: '#0f172a' }}>{goal.targetRole}</strong>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: '#f8fafc', padding: '1.15rem', borderRadius: 'var(--border-radius-md)', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', display: 'block', fontWeight: 600 }}>
+                  TARGET ROLE
+                </span>
+                <strong style={{ fontSize: '1.15rem', color: '#0f172a', display: 'block', marginTop: '0.2rem' }}>{goal.targetRole}</strong>
               </div>
 
-              <div style={{ background: 'rgba(79, 70, 229, 0.06)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(79, 70, 229, 0.2)' }}>
-                <span style={{ fontSize: '0.75rem', color: '#4f46e5', textTransform: 'uppercase', display: 'block', fontWeight: 600 }}>
-                  <Calendar size={12} style={{ display: 'inline', marginRight: '4px' }} /> Timeline
+              <div style={{ background: 'rgba(79, 70, 229, 0.06)', padding: '1.15rem', borderRadius: 'var(--border-radius-md)', border: '1px solid rgba(79, 70, 229, 0.2)' }}>
+                <span style={{ fontSize: '0.7rem', color: '#4f46e5', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', display: 'block', fontWeight: 600 }}>
+                  <Calendar size={12} style={{ display: 'inline', marginRight: '4px' }} /> TIMELINE GOAL
                 </span>
-                <strong style={{ fontSize: '1.1rem', color: '#4f46e5' }}>{goal.targetTimeline}</strong>
+                <strong style={{ fontSize: '1.15rem', color: '#4f46e5', display: 'block', marginTop: '0.2rem' }}>{goal.targetTimeline}</strong>
               </div>
             </div>
 
             {goal.targetCompanies && goal.targetCompanies.length > 0 && (
               <div>
-                <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                  <Building size={12} style={{ display: 'inline', marginRight: '4px' }} /> Target Companies
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', display: 'block', marginBottom: '0.6rem', fontWeight: 600 }}>
+                  <Building size={12} style={{ display: 'inline', marginRight: '4px' }} /> TARGET COMPANIES ARCHITECTURE
                 </span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {goal.targetCompanies.map((c) => (
                     <span
                       key={c}
-                      style={{
-                        background: 'rgba(8, 145, 178, 0.08)',
-                        color: '#0891b2',
-                        padding: '0.3rem 0.75rem',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        border: '1px solid rgba(8, 145, 178, 0.25)',
-                        fontWeight: 600,
-                      }}
+                      className="tech-badge tech-badge-indigo"
+                      style={{ fontSize: '0.85rem', padding: '0.35rem 0.85rem' }}
                     >
                       {c}
                     </span>
@@ -247,19 +261,17 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Tab 3: Resume Section */}
+        {/* Tab 3: Resume Foundation Section */}
         {(activeTab === 'dashboard' || activeTab === 'resume') && (
           <div
-            className="card-3d"
+            className="cockpit-panel animate-reveal stagger-3"
             style={{
               padding: '1.75rem',
-              marginBottom: '2rem',
-              background: '#ffffff',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
-                <FileText size={20} color="#10B981" /> Resume Foundation & PDF Preview
+                <FileText size={20} color="#059669" /> Resume Cloud Foundation & PDF Inspector
               </h3>
 
               <Button
@@ -273,22 +285,46 @@ export function DashboardPage() {
             </div>
 
             {isLoadingResume ? (
-              <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Loading resume details...</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Loading resume details...</p>
             ) : resume ? (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.25rem',
+                    padding: '1.25rem',
+                    background: '#f8fafc',
+                    borderRadius: 'var(--border-radius-md)',
+                    border: '1px solid #e2e8f0',
+                    marginBottom: '1.25rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: 'rgba(16, 185, 129, 0.12)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#059669',
+                    }}
+                  >
                     <FileText size={24} />
                   </div>
 
                   <div style={{ flex: 1, minWidth: '200px' }}>
                     <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem', color: '#0f172a', fontWeight: 700 }}>{resume.filename}</h4>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                       Uploaded on {new Date(resume.uploadDate).toLocaleDateString()} • {(resume.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
 
-                  {/* View File Button -> Opens PDF Modal directly! */}
+                  {/* View File Button -> Opens PDF Modal directly */}
                   <Button
                     type="button"
                     variant="primary"
@@ -330,8 +366,16 @@ export function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '2rem 1rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-                <p style={{ color: '#64748b', marginBottom: '1rem', fontSize: '0.95rem' }}>No Resume Uploaded Yet</p>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '2.5rem 1rem',
+                  background: '#f8fafc',
+                  borderRadius: 'var(--border-radius-md)',
+                  border: '1px dashed #cbd5e1',
+                }}
+              >
+                <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.25rem', fontSize: '0.95rem' }}>No Resume Uploaded Yet</p>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
@@ -368,14 +412,14 @@ export function DashboardPage() {
         {atsModalMessage && (
           <div className="modal-overlay" onClick={() => setAtsModalMessage(null)}>
             <div
-              className="card-3d"
+              className="cockpit-panel animate-scale-in"
               style={{ padding: '1.75rem', maxWidth: '480px', width: '100%', background: '#ffffff' }}
               onClick={(e) => e.stopPropagation()}
             >
               <h3 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', color: '#0f172a' }}>
                 <Sparkles color="#d97706" size={20} /> ATS Score Feature Notice
               </h3>
-              <p style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: '1.6', margin: '1rem 0' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: '1.6', margin: '1rem 0' }}>
                 {atsModalMessage}
               </p>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

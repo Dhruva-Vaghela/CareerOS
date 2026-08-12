@@ -87,6 +87,15 @@ describe('Auth Service Integration Tests', () => {
     expect(res.body.success).toBe(false);
   });
 
+  it('should reject protected route /me with an invalid token', async () => {
+    const res = await request(app)
+      .get('/api/v1/auth/me')
+      .set('Authorization', 'Bearer invalid.token.here');
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
   it('should refresh tokens successfully', async () => {
     const res = await request(app)
       .post('/api/v1/auth/refresh')

@@ -21,13 +21,7 @@ export function parseAuth(): RequestHandler {
           req.user = { id };
         }
       } catch (_err) {
-        const decoded = jwt.decode(token) as { userId?: string; sub?: string; user_id?: string } | null;
-        if (decoded) {
-          const id = decoded.userId || decoded.sub || decoded.user_id;
-          if (id) {
-            req.user = { id };
-          }
-        }
+        // Invalid token or wrong secret: do not authenticate via jwt.decode().
       }
     }
     next();

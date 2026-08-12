@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Activity,
 } from 'lucide-react';
 
 interface SidebarLayoutProps {
@@ -69,7 +70,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
           height: '60px',
           background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--color-border)',
           zIndex: 90,
           padding: '0 1rem',
           alignItems: 'center',
@@ -77,7 +78,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
         }}
         className="mobile-header"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div className="sidebar-logo-icon" style={{ width: '32px', height: '32px' }}>
             <Sparkles size={16} />
           </div>
@@ -99,12 +100,14 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
             <Sparkles size={20} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
               CareerOS AI
             </h1>
-            <span style={{ fontSize: '0.7rem', color: '#4f46e5', fontWeight: 700, textTransform: 'uppercase' }}>
-              Platform v1.0
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.15rem' }}>
+              <span className="tech-badge tech-badge-indigo" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+                <Activity size={10} className="animate-pulse-glow" /> COCKPIT ONLINE
+              </span>
+            </div>
           </div>
         </div>
 
@@ -118,8 +121,8 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
                 onClick={() => handleNavClick(item)}
                 className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
               >
-                <Icon size={18} style={{ color: isActive ? '#4f46e5' : '#64748b' }} />
-                <span style={{ flex: 1, color: isActive ? '#4f46e5' : '#334155' }}>{item.label}</span>
+                <Icon size={18} style={{ color: isActive ? '#4f46e5' : '#64748b', transition: 'color 0.25s ease' }} />
+                <span style={{ flex: 1, color: isActive ? '#4f46e5' : '#334155', transition: 'color 0.25s ease' }}>{item.label}</span>
                 {isActive && <ChevronRight size={14} style={{ color: '#4f46e5' }} />}
               </div>
             );
@@ -133,8 +136,8 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
               style={{
                 width: '36px',
                 height: '36px',
-                borderRadius: '50%',
-                background: 'var(--gradient-3d-hero)',
+                borderRadius: '10px',
+                background: 'var(--gradient-hero)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -142,6 +145,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
                 color: '#fff',
                 fontSize: '0.85rem',
                 flexShrink: 0,
+                boxShadow: 'var(--shadow-glow-indigo)',
               }}
             >
               {profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
@@ -151,7 +155,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
                 {profile?.fullName || 'CareerOS User'}
               </strong>
               <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {profile?.targetRole || 'Developer'}
+                {profile?.targetRole || 'Software Engineer'}
               </span>
             </div>
           </div>
@@ -170,7 +174,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
               flexShrink: 0,
             }}
           >
@@ -180,7 +184,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
       </aside>
 
       {/* Main Content Body */}
-      <main className="main-content">{children}</main>
+      <main className="main-content animate-reveal">{children}</main>
     </div>
   );
 };

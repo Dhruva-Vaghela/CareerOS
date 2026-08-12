@@ -225,15 +225,12 @@ export function EditProfilePage() {
       </button>
 
       <div
+        className="cockpit-panel"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '1px solid var(--color-border)',
           padding: '2rem',
-          boxShadow: 'var(--shadow-md)',
         }}
       >
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Edit Profile</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', color: '#0f172a' }}>Edit Profile Specification</h1>
 
         {error && <Alert type="error" message={error} />}
         {success && <Alert type="success" message={success} />}

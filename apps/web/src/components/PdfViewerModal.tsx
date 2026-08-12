@@ -19,7 +19,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="card-3d"
+        className="cockpit-panel animate-scale-in"
         style={{
           width: '100%',
           maxWidth: '960px',
@@ -28,7 +28,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
           flexDirection: 'column',
           background: '#ffffff',
           border: '1px solid #cbd5e1',
-          boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+          boxShadow: 'var(--shadow-light-lg)',
           borderRadius: '16px',
           overflow: 'hidden',
         }}
@@ -50,13 +50,13 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
               style={{
                 width: '36px',
                 height: '36px',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 background: 'rgba(16, 185, 129, 0.12)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#10b981',
+                color: '#059669',
               }}
             >
               <FileText size={20} />
@@ -102,7 +102,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
             >
               <X size={18} />

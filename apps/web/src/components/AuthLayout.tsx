@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowLeft, Dna, Target, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowLeft, Dna, Target, ShieldCheck, Activity } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -11,11 +11,11 @@ interface AuthLayoutProps {
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--color-background)', overflowX: 'hidden' }}>
-      {/* Left 3D Hero Panel (Visible on Desktop/Tablet > 850px) */}
+      {/* Left Telemetry Hero Panel */}
       <div
         style={{
           flex: 1,
-          background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.05) 50%, rgba(8, 145, 178, 0.08) 100%)',
+          background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.06) 0%, rgba(124, 58, 237, 0.04) 50%, rgba(8, 145, 178, 0.06) 100%)',
           borderRight: '1px solid #e2e8f0',
           padding: '4rem 3.5rem',
           display: 'flex',
@@ -23,7 +23,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           justifyContent: 'space-between',
           position: 'relative',
         }}
-        className="auth-hero-panel"
+        className="auth-hero-panel animate-reveal"
       >
         <div>
           {/* Top Brand Link */}
@@ -43,12 +43,12 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             <div className="sidebar-logo-icon" style={{ width: '36px', height: '36px' }}>
               <Sparkles size={20} />
             </div>
-            <span>CareerOS AI</span>
+            <span>CareerOS <span style={{ color: '#4f46e5' }}>AI</span></span>
           </Link>
 
           <div style={{ maxWidth: '520px' }}>
-            <div className="glow-pill-3d" style={{ marginBottom: '1.5rem', fontSize: '0.75rem' }}>
-              <Sparkles size={13} /> Platform v1.0 • Autonomous AI
+            <div className="glow-pill-cockpit" style={{ marginBottom: '1.5rem', fontSize: '0.725rem' }}>
+              <Activity size={12} className="animate-pulse-glow" /> Platform v1.0 • Autonomous AI Cockpit
             </div>
 
             <h2
@@ -62,7 +62,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
               }}
             >
               Architect Your Future with <br />
-              <span style={{ background: 'var(--gradient-3d-hero)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <span style={{ background: 'var(--gradient-hero)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 Career Digital Twin AI
               </span>
             </h2>
@@ -73,8 +73,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
 
             {/* Feature Bullets */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }} className="animate-reveal stagger-1">
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(79, 70, 229, 0.1)', color: '#4f46e5', border: '1px solid rgba(79, 70, 229, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Dna size={20} />
                 </div>
                 <div>
@@ -83,8 +83,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(8, 145, 178, 0.1)', color: '#0891b2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }} className="animate-reveal stagger-2">
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(8, 145, 178, 0.1)', color: '#0891b2', border: '1px solid rgba(8, 145, 178, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Target size={20} />
                 </div>
                 <div>
@@ -93,8 +93,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }} className="animate-reveal stagger-3">
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <ShieldCheck size={20} />
                 </div>
                 <div>
@@ -111,7 +111,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         </div>
       </div>
 
-      {/* Right Form Panel (Screen Proportional Width) */}
+      {/* Right Form Panel */}
       <div
         style={{
           width: '100%',
@@ -123,7 +123,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           background: '#ffffff',
           position: 'relative',
         }}
-        className="auth-form-panel"
+        className="auth-form-panel animate-scale-in"
       >
         {/* Top Back Link */}
         <Link
