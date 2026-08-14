@@ -8,5 +8,5 @@ export const config = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 3003,
   NODE_ENV: process.env.NODE_ENV || 'development',
   DATABASE_URL: process.env.DATABASE_URL || '',
-  JWT_SECRET: process.env.JWT_SECRET || 'careeros_jwt_secret_key_development_only',
+  JWT_SECRET: process.env.JWT_SECRET || 'local-dev-secret-do-not-use-in-prod',
 };

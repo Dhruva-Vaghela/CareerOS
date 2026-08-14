@@ -24,11 +24,12 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
   const [isBuildingContext, setIsBuildingContext] = useState(false);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
 
-  const fetchDigitalTwin = async () => {
+  const fetchDigitalTwin = async (signal?: AbortSignal) => {
     if (!accessToken) return;
     try {
       const res = await fetch('/api/v1/digital-twin', {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
       });
       if (res.ok) {
         const data = await res.json();
@@ -39,7 +40,8 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
           setActiveNodeId(fetchedNodes[0].id);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error('Error fetching digital twin:', err);
     } finally {
       setIsLoading(false);
@@ -47,7 +49,9 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
   };
 
   useEffect(() => {
-    fetchDigitalTwin();
+    const controller = new AbortController();
+    fetchDigitalTwin(controller.signal);
+    return () => controller.abort();
   }, [accessToken]);
 
   const handleBuildContext = async (feature: string) => {

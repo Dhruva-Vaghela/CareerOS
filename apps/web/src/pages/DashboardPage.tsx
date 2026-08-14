@@ -67,11 +67,12 @@ export function DashboardPage() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (signal?: AbortSignal) => {
     try {
       // 1. Fetch Resume
       const resResponse = await fetch('/api/v1/resume/latest', {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
       });
       if (resResponse.ok) {
         const data = await resResponse.json();
@@ -81,12 +82,14 @@ export function DashboardPage() {
       // 2. Fetch Goal
       const goalResponse = await fetch('/api/v1/career-goals/active', {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
       });
       if (goalResponse.ok) {
         const data = await goalResponse.json();
         setGoal(data.goal);
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       console.error('Error fetching dashboard data:', err);
     } finally {
       setIsLoadingResume(false);
@@ -94,9 +97,11 @@ export function DashboardPage() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
     if (accessToken) {
-      fetchDashboardData();
+      fetchDashboardData(controller.signal);
     }
+    return () => controller.abort();
   }, [accessToken]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isReplace = false) => {
