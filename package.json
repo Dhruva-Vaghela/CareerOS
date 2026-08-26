@@ -19,9 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint \"{packages,services}/**/*.ts\"",
-    "format": "prettier --write \"{packages,services}/**/*.ts\"",
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "format": "prettier --write \"{packages,services}/**/*.ts\""
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

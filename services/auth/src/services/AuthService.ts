@@ -1,7 +1,7 @@
 import { UserModel, SessionModel } from '../db/schema.js';
 import { PasswordService } from './PasswordService.js';
 import { JwtService } from './JwtService.js';
-import { UnauthorizedError, ConflictError } from '@careeros/errors';
+import { UnauthorizedError, ConflictError, NotFoundError, BadRequestError } from '@careeros/errors';
 import { eventBus } from '../bus.js';
 import crypto from 'crypto';
 
@@ -128,5 +128,62 @@ export class AuthService {
   async logout(refreshToken: string) {
     const hash = this.jwtService.hashRefreshToken(refreshToken);
     await SessionModel.deleteOne({ refreshTokenHash: hash });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await UserModel.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      throw new NotFoundError('No user found with this email address');
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await user.save();
+
+    return {
+      message: 'Password reset link generated successfully.',
+      resetToken,
+    };
+  }
+
+  async verifyResetToken(token: string) {
+    const user = await UserModel.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw new BadRequestError('Invalid or expired password reset token');
+    }
+
+    return { valid: true, email: user.email };
+  }
+
+  async resetPassword(token: string, newPasswordRaw: string) {
+    const user = await UserModel.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw new BadRequestError('Invalid or expired password reset token');
+    }
+
+    const passwordHash = await this.passwordService.hashPassword(newPasswordRaw);
+
+    user.passwordHash = passwordHash;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
+
+    // Invalidate existing sessions after password reset
+    await SessionModel.deleteMany({ userId: user._id.toHexString() });
+
+    return {
+      message: 'Password has been reset successfully. Please sign in with your new password.',
+    };
   }
 }

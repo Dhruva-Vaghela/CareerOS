@@ -54,6 +54,8 @@ export interface InitialTwinData {
   };
 }
 
+import mongoose from 'mongoose';
+
 export class DigitalTwinService {
   async getOrCreateTwin(userId: string): Promise<CareerDigitalTwin> {
     let twinDoc = await DigitalTwinModel.findOne({ userId });
@@ -74,6 +76,31 @@ export class DigitalTwinService {
 
   async getAllNodes(userId: string): Promise<TwinNode[]> {
     const twin = await this.getOrCreateTwin(userId);
+
+    try {
+      const activeResume = await mongoose.connection.collection('Resumes').findOne({ userId, status: 'ACTIVE' });
+      if (activeResume) {
+        await this.upsertNode(userId, {
+          nodeType: TwinNodeType.RESUME_METADATA,
+          source: 'RESUME_SERVICE',
+          verificationStatus: VerificationStatus.IMPORTED,
+          confidenceScore: ConfidenceLevel.MEDIUM,
+          metadata: {
+            filename: activeResume.filename,
+            secureUrl: activeResume.secureUrl,
+            publicId: activeResume.publicId,
+            size: activeResume.size,
+            uploadDate: activeResume.uploadDate,
+            version: activeResume.version,
+          },
+        });
+      } else {
+        await TwinNodeModel.deleteOne({ twinId: twin.id, nodeType: TwinNodeType.RESUME_METADATA });
+      }
+    } catch (err) {
+      logger.warn({ err, userId }, 'Could not sync resume metadata node');
+    }
+
     const nodeDocs = await TwinNodeModel.find({ twinId: twin.id });
     return nodeDocs.map((doc) => this.mapNodeToDomain(doc));
   }

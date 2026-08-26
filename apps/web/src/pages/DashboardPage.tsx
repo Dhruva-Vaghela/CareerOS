@@ -180,27 +180,57 @@ export function DashboardPage() {
             background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(8, 145, 178, 0.04) 100%)',
           }}
         >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-              <span className="tech-badge tech-badge-indigo">
-                <Terminal size={12} /> INTERVIEW COCKPIT v1.0
-              </span>
-              <span className="tech-badge tech-badge-emerald">
-                <Activity size={12} className="animate-pulse-glow" /> SYSTEM ACTIVE
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'var(--gradient-hero)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '1.25rem',
+                flexShrink: 0,
+                boxShadow: 'var(--shadow-glow-indigo)',
+                overflow: 'hidden',
+              }}
+            >
+              {profile?.profilePictureUrl ? (
+                <img
+                  src={profile.profilePictureUrl}
+                  alt={profile.fullName || 'User'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'
+              )}
             </div>
-            <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
-              {activeTab === 'digital-twin'
-                ? 'Career Digital Twin Engine'
-                : activeTab === 'resume'
-                ? 'Resume Foundation Center'
-                : activeTab === 'career-goals'
-                ? 'Career Goals & Timeline'
-                : 'Interview Command Center'}
-            </h1>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-              Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong>
-            </p>
+
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+                <span className="tech-badge tech-badge-indigo">
+                  <Terminal size={12} /> INTERVIEW COCKPIT v1.0
+                </span>
+                <span className="tech-badge tech-badge-emerald">
+                  <Activity size={12} className="animate-pulse-glow" /> SYSTEM ACTIVE
+                </span>
+              </div>
+              <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                {activeTab === 'digital-twin'
+                  ? 'Career Digital Twin Engine'
+                  : activeTab === 'resume'
+                  ? 'Resume Foundation Center'
+                  : activeTab === 'career-goals'
+                  ? 'Career Goals & Timeline'
+                  : 'Interview Command Center'}
+              </h1>
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong>
+              </p>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -267,7 +297,7 @@ export function DashboardPage() {
         )}
 
         {/* Tab 3: Resume Foundation Section */}
-        {(activeTab === 'dashboard' || activeTab === 'resume') && (
+        {activeTab === 'resume' && (
           <div
             className="cockpit-panel animate-reveal stagger-3"
             style={{

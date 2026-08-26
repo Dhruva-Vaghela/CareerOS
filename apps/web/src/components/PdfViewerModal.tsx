@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { X, ExternalLink, Download, FileText, AlertCircle } from 'lucide-react';
 
 interface PdfViewerModalProps {
@@ -14,16 +15,48 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
   pdfUrl,
   filename,
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
+  return ReactDOM.createPortal(
+    <div
+      className="modal-overlay"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 9999,
+        background: 'rgba(15, 23, 42, 0.75)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+      }}
+      onClick={onClose}
+    >
       <div
         className="cockpit-panel animate-scale-in"
         style={{
-          width: '100%',
+          width: '95%',
           maxWidth: '960px',
           height: '85vh',
+          maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
           background: '#ffffff',
@@ -31,6 +64,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
           boxShadow: 'var(--shadow-light-lg)',
           borderRadius: '16px',
           overflow: 'hidden',
+          position: 'relative',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -146,6 +180,8 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
+

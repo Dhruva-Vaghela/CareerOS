@@ -7,6 +7,8 @@ export interface IUserDocument extends Document {
   passwordHash: string;
   authProvider: string;
   status: UserStatus;
+  resetToken?: string | null;
+  resetTokenExpiry?: Date | null;
   createdAt: Date;
 }
 
@@ -24,6 +26,8 @@ const userSchema = new Schema<IUserDocument>(
     passwordHash: { type: String, required: true },
     authProvider: { type: String, required: true, default: 'LOCAL' },
     status: { type: String, enum: Object.values(UserStatus), required: true, default: UserStatus.ACTIVE },
+    resetToken: { type: String, default: null, index: true },
+    resetTokenExpiry: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now, required: true },
   },
   {

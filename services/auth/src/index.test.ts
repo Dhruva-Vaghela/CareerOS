@@ -128,4 +128,49 @@ describe('Auth Service Integration Tests', () => {
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
   });
+
+  it('should handle forgot-password request and issue reset token', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: testEmail });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.resetToken).toBeDefined();
+
+    const resetToken = res.body.data.resetToken;
+
+    // Validate reset token
+    const valRes = await request(app)
+      .get(`/api/v1/auth/validate-reset-token?token=${resetToken}`);
+    expect(valRes.status).toBe(200);
+    expect(valRes.body.data.valid).toBe(true);
+
+    // Reset password
+    const newPassword = 'NewPassword456!';
+    const resetRes = await request(app)
+      .post('/api/v1/auth/reset-password')
+      .send({ token: resetToken, password: newPassword });
+
+    expect(resetRes.status).toBe(200);
+    expect(resetRes.body.success).toBe(true);
+
+    // Login with new password
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: testEmail, password: newPassword });
+
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.success).toBe(true);
+  });
+
+  it('should reject invalid or expired reset token', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/reset-password')
+      .send({ token: 'invalid-token-12345', password: 'NewPassword456!' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
 });
+

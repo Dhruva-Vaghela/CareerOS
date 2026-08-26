@@ -146,9 +146,18 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
                 fontSize: '0.85rem',
                 flexShrink: 0,
                 boxShadow: 'var(--shadow-glow-indigo)',
+                overflow: 'hidden',
               }}
             >
-              {profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
+              {profile?.profilePictureUrl ? (
+                <img
+                  src={profile.profilePictureUrl}
+                  alt={profile.fullName || 'User'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'
+              )}
             </div>
             <div style={{ overflow: 'hidden' }}>
               <strong style={{ fontSize: '0.85rem', color: '#0f172a', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Dna, ShieldCheck, Database, Sparkles, CheckCircle2, HelpCircle, Cpu, Radio, Network } from 'lucide-react';
+import { Dna, ShieldCheck, Database, Sparkles, CheckCircle2, HelpCircle, Cpu, Radio, Network, Eye } from 'lucide-react';
+import { PdfViewerModal } from './PdfViewerModal';
 
 interface TwinNode {
   id: string;
@@ -23,6 +24,9 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
   const [contextResult, setContextResult] = useState<any | null>(null);
   const [isBuildingContext, setIsBuildingContext] = useState(false);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+  const [viewingPdfUrl, setViewingPdfUrl] = useState<string | null>(null);
+  const [viewingPdfFilename, setViewingPdfFilename] = useState<string>('');
+
 
   const fetchDigitalTwin = async (signal?: AbortSignal) => {
     if (!accessToken) return;
@@ -350,6 +354,22 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
                 </div>
               ))}
             </div>
+
+            {(activeNode.nodeType === 'RESUME_METADATA' || activeNode.nodeType === 'RESUME') && activeNode.metadata?.secureUrl && (
+              <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setViewingPdfUrl(activeNode.metadata.secureUrl);
+                    setViewingPdfFilename(activeNode.metadata.filename || 'Resume.pdf');
+                  }}
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', width: 'auto', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Eye size={14} /> View PDF Document
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -411,6 +431,17 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
           </p>
         )}
       </div>
+
+      {/* PDF Viewer Modal */}
+      {viewingPdfUrl && (
+        <PdfViewerModal
+          isOpen={!!viewingPdfUrl}
+          onClose={() => setViewingPdfUrl(null)}
+          pdfUrl={viewingPdfUrl}
+          filename={viewingPdfFilename}
+        />
+      )}
     </div>
   );
 };
+

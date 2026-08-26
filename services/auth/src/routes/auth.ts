@@ -2,7 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { formatSuccess } from '@careeros/errors';
 import { validateRequest } from '@careeros/validation';
 import { AuthService } from '../services/AuthService.js';
-import { registerSchema, loginSchema, refreshSchema, logoutSchema } from '../validation/auth.schema.js';
+import { registerSchema, loginSchema, refreshSchema, logoutSchema, forgotPasswordSchema, resetPasswordSchema } from '../validation/auth.schema.js';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -64,6 +64,47 @@ router.post(
   },
 );
 
+router.post(
+  '/forgot-password',
+  validateRequest({ body: forgotPasswordSchema }),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { email } = req.body;
+      const result = await authService.forgotPassword(email);
+      res.json(formatSuccess(result));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  '/validate-reset-token',
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const token = String(req.query.token || '');
+      const result = await authService.verifyResetToken(token);
+      res.json(formatSuccess(result));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  '/reset-password',
+  validateRequest({ body: resetPasswordSchema }),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { token, password } = req.body;
+      const result = await authService.resetPassword(token, password);
+      res.json(formatSuccess(result));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 router.get(
   '/me',
   requireAuth(),
@@ -79,3 +120,4 @@ router.get(
 
 export const authRouter = router;
 export default authRouter;
+
