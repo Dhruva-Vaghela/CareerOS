@@ -36,7 +36,10 @@ const initialTwinSchema = z.object({
 });
 
 const contextQuerySchema = z.object({
-  features: z.array(z.string()).min(1, 'At least one feature is required'),
+  features: z.array(z.string()).optional(),
+  targetFeature: z.string().optional(),
+}).refine(data => (data.features && data.features.length > 0) || Boolean(data.targetFeature), {
+  message: 'Either features array or targetFeature must be provided',
 });
 
 digitalTwinRouter.get('/', requireAuth(), async (req: AuthenticatedRequest, res: Response, next) => {
@@ -96,9 +99,15 @@ digitalTwinRouter.post('/context', requireAuth(), async (req: AuthenticatedReque
     if (!parseResult.success) {
       throw new ValidationError('Invalid context query payload', parseResult.error.errors);
     }
+    const features = (
+      parseResult.data.features && parseResult.data.features.length > 0
+        ? parseResult.data.features
+        : [parseResult.data.targetFeature!]
+    ) as ContextFeature[];
+
     const context = await contextBuilderService.buildContext({
       userId,
-      features: parseResult.data.features as ContextFeature[],
+      features,
     });
     res.json({ context });
   } catch (err) {
