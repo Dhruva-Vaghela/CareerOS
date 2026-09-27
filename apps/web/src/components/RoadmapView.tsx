@@ -76,15 +76,95 @@ interface RoadmapData {
   modules: Module[];
 }
 
+interface ActiveCareerGoal {
+  id: string;
+  targetRole: string;
+  targetCompanies?: string[];
+  targetTimeline?: string;
+  customTimeline?: string;
+  updatedAt: string;
+}
+
 export const RoadmapView: React.FC = () => {
   const { accessToken } = useAuth();
   const [roadmap, setRoadmap] = useState<RoadmapData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
   const [togglingItemId, setTogglingItemId] = useState<string | null>(null);
+
+  const fetchActiveGoal = async (signal?: AbortSignal): Promise<ActiveCareerGoal | null> => {
+    const res = await fetch('/api/v1/career-goals/active', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal,
+    });
+    if (!res.ok) throw new Error('Failed to load your active career goal.');
+    const json = await res.json();
+    if (json.goal) return json.goal;
+
+    const profileResponse = await fetch('/api/v1/profile', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal,
+    });
+    if (!profileResponse.ok) throw new Error('Failed to load your profile target role.');
+    const profileJson = await profileResponse.json();
+    const targetRole = profileJson.data?.profile?.targetRole;
+    if (!targetRole) return null;
+
+    const createGoalResponse = await fetch('/api/v1/career-goals', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ targetRole }),
+      signal,
+    });
+    const createdGoalJson = await createGoalResponse.json();
+    if (!createGoalResponse.ok) {
+      throw new Error(createdGoalJson.error?.message || 'Failed to create a career goal from your profile.');
+    }
+    return createdGoalJson.goal || null;
+  };
+
+  const requestRoadmap = async (goal: ActiveCareerGoal, signal?: AbortSignal): Promise<RoadmapData> => {
+    const res = await fetch('/api/v1/roadmaps/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        goalId: goal.id,
+        targetRole: goal.targetRole,
+        targetCompanies: goal.targetCompanies || [],
+        targetTimeline: goal.customTimeline || goal.targetTimeline,
+      }),
+      signal,
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || 'Failed to generate roadmap');
+    return json.data?.roadmap || json.roadmap;
+  };
+
+  const applyRoadmap = (data: RoadmapData | null) => {
+    setRoadmap(data);
+    if (!data?.modules?.length) return;
+
+    const expanded: Record<string, boolean> = {};
+    const expandedTopics: Record<string, boolean> = {};
+    data.modules.forEach((module, index) => {
+      expanded[module.id] = index < 2;
+      module.topics.forEach((topic) => {
+        expandedTopics[topic.id] = true;
+      });
+    });
+    setExpandedModules(expanded);
+    setExpandedTopics(expandedTopics);
+  };
 
   const fetchActiveRoadmap = async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -130,41 +210,62 @@ export const RoadmapView: React.FC = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (accessToken) {
-      fetchActiveRoadmap(controller.signal);
-    }
-    return () => controller.abort();
+    if (!accessToken) return () => controller.abort();
+
+    const synchronizeRoadmap = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [roadmapResponse, goal] = await Promise.all([
+          fetch('/api/v1/roadmaps/active', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            signal: controller.signal,
+          }),
+          fetchActiveGoal(controller.signal),
+        ]);
+        if (!roadmapResponse.ok) throw new Error('Failed to load your roadmap.');
+
+        const roadmapJson = await roadmapResponse.json();
+        let activeRoadmap = roadmapJson.data?.roadmap || roadmapJson.roadmap || null;
+        const goalIsNewer = activeRoadmap && goal
+          && new Date(goal.updatedAt).getTime() > new Date(activeRoadmap.generatedAt).getTime();
+        const goalDoesNotMatch = activeRoadmap && goal
+          && (activeRoadmap.goalId !== goal.id
+            || activeRoadmap.targetRole?.trim().toLowerCase() !== goal.targetRole.trim().toLowerCase());
+
+        if (goal && (!activeRoadmap || goalIsNewer || goalDoesNotMatch)) {
+          setIsGenerating(true);
+          activeRoadmap = await requestRoadmap(goal, controller.signal);
+        }
+
+        applyRoadmap(activeRoadmap);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          setError(err.message || 'Failed to load roadmap. Please try again.');
+        }
+      } finally {
+        setIsGenerating(false);
+        setIsLoading(false);
+      }
+    };
+
+    const startupTimer = window.setTimeout(() => void synchronizeRoadmap(), 0);
+    return () => {
+      window.clearTimeout(startupTimer);
+      controller.abort();
+    };
   }, [accessToken]);
 
   const handleGenerateRoadmap = async () => {
     setIsGenerating(true);
     setError(null);
+    setSuccess(null);
     try {
-      const res = await fetch('/api/v1/roadmaps/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({}),
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || 'Failed to generate roadmap');
-      }
-
-      const newRoadmap = json.data?.roadmap || json.roadmap;
-      setRoadmap(newRoadmap);
-
-      // Auto-expand first 2 modules
-      if (newRoadmap && newRoadmap.modules?.length > 0) {
-        const initExp: Record<string, boolean> = {};
-        newRoadmap.modules.forEach((m: Module, idx: number) => {
-          initExp[m.id] = idx < 2;
-        });
-        setExpandedModules(initExp);
-      }
+      const goal = await fetchActiveGoal();
+      if (!goal) throw new Error('Choose a career goal before generating a roadmap.');
+      const newRoadmap = await requestRoadmap(goal);
+      applyRoadmap(newRoadmap);
+      setSuccess(`Generated roadmap v${newRoadmap.version} for ${goal.targetRole}.`);
     } catch (err: any) {
       setError(err.message || 'Error occurred while generating roadmap.');
     } finally {
@@ -339,6 +440,9 @@ export const RoadmapView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {error && <Alert type="error" message={error} />}
+      {success && <Alert type="success" message={success} />}
+
       {/* Header & Progress Card */}
       <div className="card" style={{ padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>

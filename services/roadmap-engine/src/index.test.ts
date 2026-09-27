@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { NodeType, RoadmapStatus } from '@careeros/shared-types';
 import { AIGeneratorService, GeneratedRoadmapSchema } from './services/aiGenerator.service.js';
+import { generateRoadmapSchema } from './routes/roadmap.routes.js';
 
 describe('Roadmap Engine Unit Tests', () => {
   const aiGenerator = new AIGeneratorService();
@@ -89,5 +90,15 @@ describe('Roadmap Engine Unit Tests', () => {
 
     const parseResult = GeneratedRoadmapSchema.safeParse(malformed);
     expect(parseResult.success).toBe(false);
+  });
+
+  it('requires the active career goal when a roadmap is requested', () => {
+    expect(generateRoadmapSchema.safeParse({}).success).toBe(false);
+    expect(
+      generateRoadmapSchema.safeParse({
+        goalId: 'goal-123',
+        targetRole: 'AI Engineer',
+      }).success,
+    ).toBe(true);
   });
 });

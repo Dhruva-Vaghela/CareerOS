@@ -8,7 +8,7 @@ const logger = createLogger('career-goal-service');
 export interface UpsertGoalInput {
   targetRole: string;
   targetCompanies?: string[];
-  timeline: string;
+  timeline?: string;
   customTimeline?: string;
 }
 
@@ -84,7 +84,7 @@ export class CareerGoalService {
       userId: doc.userId,
       targetRole: doc.targetRole,
       targetCompanies: doc.targetCompanies || [],
-      targetTimeline: doc.timeline,
+      targetTimeline: doc.timeline || undefined,
       customTimeline: doc.customTimeline || undefined,
       status: doc.status as CareerGoalStatus,
       createdAt: doc.createdAt,

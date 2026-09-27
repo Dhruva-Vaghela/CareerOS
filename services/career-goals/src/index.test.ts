@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TimelineOption, CareerGoalStatus } from '@careeros/shared-types';
+import { upsertSchema } from './routes/careerGoal.routes.js';
 
 describe('Career Goal Unit Tests', () => {
   it('should support required timeline options', () => {
@@ -16,5 +17,9 @@ describe('Career Goal Unit Tests', () => {
     expect(CareerGoalStatus.ACTIVE).toBe('ACTIVE');
     expect(CareerGoalStatus.COMPLETED).toBe('COMPLETED');
     expect(CareerGoalStatus.ABANDONED).toBe('ABANDONED');
+  });
+
+  it('allows a career goal without an optional target timeline', () => {
+    expect(upsertSchema.safeParse({ targetRole: 'AI Engineer' }).success).toBe(true);
   });
 });

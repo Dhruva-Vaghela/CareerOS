@@ -6,7 +6,7 @@ export interface ICareerGoalDocument extends Document {
   userId: string;
   targetRole: string;
   targetCompanies: string[];
-  timeline: string;
+  timeline?: string;
   customTimeline?: string | null;
   status: CareerGoalStatus;
   createdAt: Date;
@@ -18,7 +18,7 @@ const careerGoalSchema = new Schema<ICareerGoalDocument>(
     userId: { type: String, required: true, index: true },
     targetRole: { type: String, required: true },
     targetCompanies: { type: [String], default: [] },
-    timeline: { type: String, required: true },
+    timeline: { type: String },
     customTimeline: { type: String, default: null },
     status: {
       type: String,
@@ -51,7 +51,7 @@ export type CareerGoalRow = {
   userId: string;
   targetRole: string;
   targetCompanies: string[];
-  timeline: string;
+  timeline?: string;
   customTimeline?: string | null;
   status: CareerGoalStatus;
   createdAt: Date;

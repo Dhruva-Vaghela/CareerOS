@@ -25,8 +25,8 @@ const logger = createLogger('roadmap-service');
 
 export interface GenerateRoadmapOptions {
   userId: string;
-  goalId?: string;
-  targetRole?: string;
+  goalId: string;
+  targetRole: string;
   targetCompanies?: string[];
   targetTimeline?: string;
   experienceLevel?: string;
@@ -42,10 +42,22 @@ export class RoadmapService {
 
   public async generateRoadmap(options: GenerateRoadmapOptions): Promise<EnrichedRoadmap> {
     const { userId } = options;
-    const targetRole = options.targetRole || 'Full Stack Developer';
-    const goalId = options.goalId || randomUUID();
+    const targetRole = options.targetRole.trim();
+    const goalId = options.goalId.trim();
+    if (!targetRole || !goalId) {
+      throw new BadRequestError('An active career goal is required to generate a roadmap');
+    }
 
     logger.info({ userId, targetRole }, 'Generating personalized learning roadmap');
+
+    const activeRoadmap = await RoadmapModel.findOne({ userId, status: RoadmapStatus.ACTIVE });
+    const previousModuleTitles = activeRoadmap
+      && activeRoadmap.goalId === goalId
+      && activeRoadmap.targetRole.trim().toLowerCase() === targetRole.toLowerCase()
+      ? (await ModuleModel.find({ roadmapId: activeRoadmap._id }).sort({ order: 1 }).select('title').lean())
+          .map((module) => module.title.slice(0, 120))
+          .slice(0, 6)
+      : undefined;
 
     // 1. Call AI generator
     const generated = await this.aiGenerator.generateRoadmap({
@@ -55,6 +67,7 @@ export class RoadmapService {
       targetTimeline: options.targetTimeline,
       experienceLevel: options.experienceLevel,
       currentSkills: options.currentSkills,
+      previousModuleTitles,
     });
 
     // 2. Archive previous active roadmaps for this user

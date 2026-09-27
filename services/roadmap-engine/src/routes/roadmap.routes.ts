@@ -7,9 +7,9 @@ import { formatSuccess, ValidationError } from '@careeros/errors';
 export const roadmapRouter = Router();
 const roadmapService = new RoadmapService();
 
-const generateRoadmapSchema = z.object({
-  goalId: z.string().optional(),
-  targetRole: z.string().optional(),
+export const generateRoadmapSchema = z.object({
+  goalId: z.string().trim().min(1),
+  targetRole: z.string().trim().min(1),
   targetCompanies: z.array(z.string()).optional(),
   targetTimeline: z.string().optional(),
   experienceLevel: z.string().optional(),

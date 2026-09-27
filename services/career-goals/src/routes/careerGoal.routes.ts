@@ -7,10 +7,10 @@ import { ValidationError } from '@careeros/errors';
 export const careerGoalRouter = Router();
 const service = new CareerGoalService();
 
-const upsertSchema = z.object({
+export const upsertSchema = z.object({
   targetRole: z.string().min(1, 'Target role is required'),
   targetCompanies: z.array(z.string()).optional().default([]),
-  timeline: z.string().min(1, 'Timeline is required'),
+  timeline: z.string().optional(),
   customTimeline: z.string().optional(),
 });
 

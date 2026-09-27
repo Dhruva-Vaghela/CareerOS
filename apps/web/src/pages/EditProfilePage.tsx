@@ -193,6 +193,32 @@ export function EditProfilePage() {
         throw new Error(data.error?.message || 'Failed to update profile');
       }
 
+      const activeGoalResponse = await fetch('/api/v1/career-goals/active', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!activeGoalResponse.ok) {
+        throw new Error('Profile updated, but the active career goal could not be loaded.');
+      }
+      const activeGoalData = await activeGoalResponse.json();
+      const activeGoal = activeGoalData.goal;
+      const goalResponse = await fetch('/api/v1/career-goals', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          targetRole: finalTargetRole,
+          targetCompanies: activeGoal?.targetCompanies || [],
+          ...(activeGoal?.targetTimeline ? { timeline: activeGoal.targetTimeline } : {}),
+          ...(activeGoal?.customTimeline ? { customTimeline: activeGoal.customTimeline } : {}),
+        }),
+      });
+      if (!goalResponse.ok) {
+        const goalError = await goalResponse.json();
+        throw new Error(goalError.error?.message || 'Profile updated, but the career goal could not be synchronized.');
+      }
+
       updateLocalProfile(data.data.profile, data.data.completion);
       setSuccess('Profile updated successfully!');
       setTimeout(() => {

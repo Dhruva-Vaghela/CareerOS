@@ -35,7 +35,7 @@ interface ResumeData {
 
 interface GoalData {
   targetRole: string;
-  targetTimeline: string;
+  targetTimeline?: string;
   targetCompanies: string[];
 }
 
@@ -320,7 +320,7 @@ export function DashboardPage() {
                 <span style={{ fontSize: '0.7rem', color: '#4f46e5', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', display: 'block', fontWeight: 600 }}>
                   <Calendar size={12} style={{ display: 'inline', marginRight: '4px' }} /> TIMELINE GOAL
                 </span>
-                <strong style={{ fontSize: '1.15rem', color: '#4f46e5', display: 'block', marginTop: '0.2rem' }}>{goal.targetTimeline}</strong>
+                <strong style={{ fontSize: '1.15rem', color: '#4f46e5', display: 'block', marginTop: '0.2rem' }}>{goal.targetTimeline || 'Not set'}</strong>
               </div>
             </div>
 

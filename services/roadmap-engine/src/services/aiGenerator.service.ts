@@ -85,6 +85,7 @@ export interface RoadmapGenerationInput {
   experienceLevel?: string;
   currentSkills?: string[];
   background?: string;
+  previousModuleTitles?: string[];
 }
 
 export class AIGeneratorService {
@@ -115,7 +116,7 @@ export class AIGeneratorService {
         },
         input: { content: prompt },
         options: {
-          temperature: 0.3,
+          temperature: input.previousModuleTitles?.length ? 0.7 : 0.3,
           topP: 0.95,
           maxOutputTokens: 8192,
         },
@@ -140,6 +141,10 @@ export class AIGeneratorService {
   }
 
   private buildPrompt(input: RoadmapGenerationInput): string {
+    const regenerationGuidance = input.previousModuleTitles?.length
+      ? `This is a fresh alternative roadmap for the same target role. Keep the role and core prerequisites, but make the learning path meaningfully different. Avoid reusing these previous module titles: ${JSON.stringify(input.previousModuleTitles)}.`
+      : '';
+
     return `
 You are the CareerOS AI Senior Curriculum Architect.
 Generate a structured, rigorous, and highly actionable learning roadmap for a student/engineer aiming for the target role: "${input.targetRole}".
@@ -150,6 +155,8 @@ User Profile:
 - Experience Level: ${input.experienceLevel || 'Beginner to Intermediate'}
 - Target Companies: ${input.targetCompanies?.join(', ') || 'Top Tech & Startups'}
 - Current Known Skills: ${input.currentSkills?.join(', ') || 'Foundational Programming'}
+
+${regenerationGuidance}
 
 Requirements:
 1. Provide between 4 and 6 sequential Modules.

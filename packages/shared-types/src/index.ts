@@ -107,7 +107,7 @@ export interface CareerGoal {
   userId: string;
   targetRole: string;
   targetCompanies: string[];
-  targetTimeline: string;
+  targetTimeline?: string;
   customTimeline?: string;
   status: CareerGoalStatus;
   createdAt: Date;
