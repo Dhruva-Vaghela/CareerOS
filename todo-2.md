@@ -56,7 +56,10 @@ Before working on any module or feature, follow this order strictly:
 - [x] `services/auth`
 - [x] `services/profile`
 - [x] `services/career-goals`
-- [ ] `services/roadmap-engine`
+- [x] `services/resume`
+- [x] `services/digital-twin`
+- [x] `services/health-check`
+- [x] `services/roadmap-engine`
 - [ ] `services/progress-engine`
 - [ ] `services/study-planner`
 - [ ] `services/skill-tracking`
@@ -67,10 +70,13 @@ Before working on any module or feature, follow this order strictly:
 - [ ] `services/career-readiness`
 - [ ] `services/recommendation-engine`
 - [ ] `services/productivity`
-- [x] `services/digital-twin`
-- [x] `packages/event-bus-client`
-- [x] `packages/ai-reasoning-client`
+- [x] `packages/ai-client`
+- [x] `packages/database`
+- [x] `packages/errors`
+- [x] `packages/event-bus`
+- [x] `packages/logger`
 - [x] `packages/shared-types`
+- [x] `packages/validation`
 
 ## Cross-cutting
 
@@ -194,69 +200,71 @@ Before working on any module or feature, follow this order strictly:
 
 ## Domain
 
-- [ ] Roadmap
-- [ ] Module
-- [ ] Topic
-- [ ] Subtopic
-- [ ] Checklist Item
-- [ ] Dependency
-- [ ] Roadmap version
+- [x] Roadmap
+- [x] Module
+- [x] Topic
+- [x] Subtopic
+- [x] Checklist Item
+- [x] Dependency
+- [x] Roadmap version
 
 ## Generation
 
-- [ ] Goal/profile/skill/context inputs
-- [ ] Context retrieval
-- [ ] Structured generation
-- [ ] Output schema
-- [ ] Dependency validation
-- [ ] Mandatory/Recommended/Optional classification
+- [x] Goal/profile/skill/context inputs
+- [x] Context retrieval
+- [x] Structured generation
+- [x] Output schema
+- [x] Dependency validation
+- [x] Mandatory/Recommended/Optional classification
 
 ## Business rules
 
-- [ ] Mandatory nodes cannot be structurally removed
-- [ ] Mandatory dependency protection
-- [ ] Backend enforcement
-- [ ] Machine-readable mutation errors
+- [x] Mandatory nodes cannot be structurally removed
+- [x] Mandatory dependency protection
+- [x] Backend enforcement
+- [x] Machine-readable mutation errors
 
 ## Lifecycle
 
-- [ ] Initial generation
-- [ ] Versioning
-- [ ] Regeneration
-- [ ] Preserve prior versions
+- [x] Initial generation
+- [x] Versioning
+- [x] Regeneration
+- [x] Preserve prior versions
 - [ ] Preserve completed evidence during regeneration
 
 ## Events
 
-- [ ] `roadmap.generated`
+- [x] `roadmap.generated`
 - [ ] `roadmap.regenerated`
-- [ ] `roadmap.node.completed`
+- [x] `roadmap.node.completed`
 
 ## API / UI
 
-- [ ] Generate roadmap
-- [ ] Active roadmap
-- [ ] Roadmap history
-- [ ] Roadmap detail
-- [ ] Node mutation
-- [ ] Expand/collapse
+- [x] Generate roadmap
+- [x] Active roadmap
+- [x] Roadmap history
+- [x] Roadmap detail
+- [x] Node mutation
+- [x] Expand/collapse
 - [ ] Search/filter
-- [ ] Dependency indicators
-- [ ] Completion indicators
-- [ ] Version selection
-- [ ] Loading state
-- [ ] Error state
-- [ ] Responsive UI
+- [x] Dependency indicators
+- [x] Completion indicators
+- [x] Version selection
+- [x] Loading state
+- [x] Error state
+- [x] Responsive UI
 
 ## Tests
 
-- [ ] Unit
-- [ ] Repository
-- [ ] Generation
-- [ ] Schema
-- [ ] Dependency
-- [ ] Versioning
-- [ ] Event contract
+- [x] Unit
+- [x] Repository
+- [x] Generation
+- [x] Schema
+- [x] Dependency
+- [x] Versioning
+- [x] Event contract
+- [x] API
+- [ ] Browser
 - [ ] API
 - [ ] Browser
 

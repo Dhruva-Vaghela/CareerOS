@@ -106,20 +106,70 @@ Personalized Recommendations
 
 ---
 
-## Technology Vision
+---
 
-Planned technology stack includes:
+## Technology Stack
 
-* Next.js
-* NestJS
-* PostgreSQL
-* Redis
-* LangGraph
-* LiteLLM
-* Retrieval-Augmented Generation (RAG)
-* Vector Database
-* Gemini / Claude / OpenAI
-* Browser Speech APIs
+### Current Implementation
+* **Architecture:** Monorepo with npm workspaces (`apps/*`, `packages/*`, `services/*`)
+* **Frontend:** React 18, TypeScript, Vite, TailwindCSS / Vanilla CSS
+* **Backend:** Node.js (>=20.0.0), Express, TypeScript (`tsx`)
+* **Database:** MongoDB Atlas / Local MongoDB via Mongoose
+* **AI Orchestration:** Google Gemini Provider (`ai-client`) with structured outputs, prompt manager, retry engine, and telemetry
+* **File & Resume Storage:** Cloudinary (`services/resume`)
+* **Testing:** Vitest (unit & integration test suites)
+* **Code Quality:** ESLint & Prettier
+
+### Planned Ecosystem Expansion
+* Redis (caching & pub/sub expansion)
+* Vector Database & RAG
+* Browser Speech Recognition / Synthesis APIs
+
+---
+
+## Service Architecture & Port Mapping
+
+| Service | Port | Directory | Description |
+|---|---|---|---|
+| **Web Frontend** | `5173` | `apps/web` | Vite + React Web Application |
+| **Auth Service** | `3001` | `services/auth` | JWT Authentication, Registration, Login, Session Management |
+| **Profile Service** | `3002` | `services/profile` | User Profile, Skills, Background, Experiences |
+| **Career Goals Service** | `3003` | `services/career-goals` | Target Roles, Goal Lifecycles, Active Goal Tracking |
+| **Resume Service** | `3004` | `services/resume` | Resume PDF Upload, Parsing & Cloudinary Storage |
+| **Digital Twin Service** | `3005` | `services/digital-twin` | Event-driven Context Aggregation & Querying |
+| **Roadmap Engine Service** | `3006` | `services/roadmap-engine` | AI-Powered Personalized Curriculum & Milestone Tracking |
+| **Health Check Service** | - | `services/health-check` | Database & Service Connectivity Diagnostics |
+
+---
+
+## Quick Start
+
+> **Full Cross-Platform Setup Guide**: See **[SetUpGuide.md](file:///Users/yeshaparwani/Documents/Projects-Learn/CareerOS/SetUpGuide.md)** for detailed Windows and macOS instructions.
+
+```bash
+# 1. Install dependencies across workspaces
+npm install
+
+# 2. Configure environment
+# macOS / Linux:
+cp .env_Example .env
+# Windows (PowerShell):
+Copy-Item .env_Example .env
+
+# 3. Build shared packages (required)
+npm run build
+
+# 4. Verify MongoDB connection
+node test-mongo-connection.js
+
+# 5. Run tests
+npm test
+
+# 6. Start full application (backend + web)
+npm run dev
+```
+
+Visit **http://localhost:5173** to interact with the application.
 
 ---
 
@@ -129,38 +179,24 @@ CareerOS AI follows modern software engineering practices:
 
 * Domain-Driven Design (DDD)
 * Clean Architecture
-* Modular Monolith (MVP)
+* Modular Monolith / Microservices (MVP)
 * SOLID Principles
 * Security by Design
-* High Cohesion
-* Loose Coupling
+* High Cohesion & Loose Coupling
 * Architecture Before Implementation
 * Documentation-First Development
 
 ---
 
-## Development Philosophy
-
-Every feature follows this workflow:
-
-1. Business Understanding
-2. Domain Modeling
-3. Architecture Design
-4. Data Flow
-5. AI Workflow
-6. Database Design
-7. API Design
-8. Implementation
-9. Testing
-10. Documentation
-
----
-
 ## Project Status
 
-🚧 **Currently in Architecture & Engineering Design Phase**
+🚀 **Phase 1 Foundation Implemented & Verified**
 
-The repository is focused on building a strong product foundation, AI architecture, and engineering documentation before implementation begins.
+The core foundation, AI reasoning pipeline, authentication, profile, career goals, resume parsing, digital twin synchronization, and web frontend are implemented and passing all 15 test suites.
+
+Next phase on the roadmap: **AI Roadmap Engine & Skill Tracking**.
+
+See `roadmap-2.md` and `todo-2.md` for the latest roadmap and task status.
 
 ---
 

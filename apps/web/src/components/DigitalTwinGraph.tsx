@@ -68,7 +68,7 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ targetFeature: feature }),
+        body: JSON.stringify({ features: [feature], targetFeature: feature }),
       });
       if (res.ok) {
         const data = await res.json();

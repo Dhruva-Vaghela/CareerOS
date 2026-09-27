@@ -7,6 +7,7 @@ import { Alert } from '../components/Alert';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { DigitalTwinGraph } from '../components/DigitalTwinGraph';
 import { PdfViewerModal } from '../components/PdfViewerModal';
+import { RoadmapView } from '../components/RoadmapView';
 import {
   User as UserIcon,
   Briefcase,
@@ -20,6 +21,7 @@ import {
   Eye,
   Activity,
   Terminal,
+  Compass,
 } from 'lucide-react';
 
 interface ResumeData {
@@ -43,8 +45,8 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = (searchParams.get('tab') as 'dashboard' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
+  const tabParam = (searchParams.get('tab') as 'dashboard' | 'roadmap' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'roadmap' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
 
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [goal, setGoal] = useState<GoalData | null>(null);
@@ -60,7 +62,7 @@ export function DashboardPage() {
     }
   }, [tabParam]);
 
-  const handleTabChange = (tab: 'dashboard' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
+  const handleTabChange = (tab: 'dashboard' | 'roadmap' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
     setActiveTab(tab);
     if (tab !== 'profile') {
       setSearchParams({ tab });
@@ -221,6 +223,8 @@ export function DashboardPage() {
               <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
                 {activeTab === 'digital-twin'
                   ? 'Career Digital Twin Engine'
+                  : activeTab === 'roadmap'
+                  ? 'Personalized AI Roadmap'
                   : activeTab === 'resume'
                   ? 'Resume Foundation Center'
                   : activeTab === 'career-goals'
@@ -239,6 +243,51 @@ export function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* AI Learning Roadmap CTA Banner (Visible on Dashboard Overview) */}
+        {activeTab === 'dashboard' && (
+          <div
+            className="cockpit-panel animate-reveal"
+            style={{
+              padding: '1.5rem 1.75rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '1.25rem',
+              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%)',
+              border: '1px solid rgba(79, 70, 229, 0.25)',
+              borderRadius: 'var(--border-radius-md)',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                <span className="tech-badge tech-badge-indigo" style={{ fontSize: '0.7rem' }}>
+                  <Sparkles size={11} /> AI LEARNING ENGINE
+                </span>
+                <span className="tech-badge tech-badge-emerald" style={{ fontSize: '0.7rem' }}>
+                  STEP-BY-STEP CURRICULUM
+                </span>
+              </div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Personalized Learning Roadmap & Milestone Tracker
+              </h3>
+              <p style={{ color: '#475569', fontSize: '0.875rem', margin: '0.3rem 0 0' }}>
+                View your AI-generated curriculum, complete actionable tasks with documentation links, and track skill mastery.
+              </p>
+            </div>
+            <Button onClick={() => handleTabChange('roadmap')} style={{ width: 'auto' }}>
+              <Compass size={16} style={{ marginRight: '0.4rem' }} /> Open Learning Roadmap
+            </Button>
+          </div>
+        )}
+
+        {/* Tab: AI Roadmap View */}
+        {activeTab === 'roadmap' && (
+          <div className="animate-reveal stagger-1">
+            <RoadmapView />
+          </div>
+        )}
 
         {/* Tab 1: Dashboard Overview & Digital Twin Engine */}
         {(activeTab === 'dashboard' || activeTab === 'digital-twin') && (

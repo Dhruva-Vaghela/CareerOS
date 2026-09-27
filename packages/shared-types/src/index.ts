@@ -233,15 +233,20 @@ export enum NodeType {
 export enum RoadmapStatus {
   ACTIVE = 'ACTIVE',
   ARCHIVED = 'ARCHIVED',
+  GENERATING = 'GENERATING',
 }
 
 export interface Roadmap {
   id: string;
   userId: string;
   goalId: string;
+  targetRole?: string;
   status: RoadmapStatus;
   generatedAt: Date;
   version: number;
+  modulesCount?: number;
+  totalItemsCount?: number;
+  completedItemsCount?: number;
 }
 
 export interface Module {
@@ -249,20 +254,25 @@ export interface Module {
   roadmapId: string;
   order: number;
   title: string;
+  description?: string;
   type: NodeType;
+  estimatedHours?: number;
 }
 
 export interface Topic {
   id: string;
   moduleId: string;
+  roadmapId?: string;
   order: number;
   title: string;
+  description?: string;
   type: NodeType;
 }
 
 export interface Subtopic {
   id: string;
   topicId: string;
+  roadmapId?: string;
   order: number;
   title: string;
   type: NodeType;
@@ -271,9 +281,14 @@ export interface Subtopic {
 export interface ChecklistItem {
   id: string;
   subtopicId: string;
+  topicId?: string;
+  moduleId?: string;
+  roadmapId?: string;
   order: number;
   title: string;
+  description?: string;
   completed: boolean;
+  completedAt?: Date;
   resourceRef?: string;
   userNote?: string;
   deadline?: Date;
@@ -282,6 +297,23 @@ export interface ChecklistItem {
 export interface DependencyLink {
   fromNodeId: string;
   toNodeId: string;
+  type?: string;
+}
+
+export interface EnrichedSubtopic extends Subtopic {
+  checklist: ChecklistItem[];
+}
+
+export interface EnrichedTopic extends Topic {
+  subtopics: EnrichedSubtopic[];
+}
+
+export interface EnrichedModule extends Module {
+  topics: EnrichedTopic[];
+}
+
+export interface EnrichedRoadmap extends Roadmap {
+  modules: EnrichedModule[];
 }
 
 export interface ProgressSnapshot {
@@ -532,6 +564,13 @@ export type RoadmapNodeCompletedEvent = BaseEvent<{
   roadmapId: string;
   nodeType: 'MODULE' | 'TOPIC' | 'SUBTOPIC' | 'CHECKLIST';
   nodeId: string;
+}>;
+
+export type RoadmapRegeneratedEvent = BaseEvent<{
+  userId: string;
+  roadmapId: string;
+  oldVersion: number;
+  newVersion: number;
 }>;
 
 export type ProgressUpdatedEvent = BaseEvent<{

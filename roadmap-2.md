@@ -27,20 +27,30 @@ The architecture defines dependencies between modules. The sequence below follow
 
 **Goal:** Establish the shared infrastructure required by all services.
 
-- [ ] Confirm monorepo/service structure.
-- [ ] Establish `apps/web`.
-- [ ] Establish service boundaries under `services/`.
-- [ ] Establish shared packages:
-  - [ ] `packages/event-bus-client`
-  - [ ] `packages/ai-reasoning-client`
-  - [ ] `packages/shared-types`
-- [ ] Establish authentication/session handling.
-- [ ] Establish API conventions under `/api/v1/`.
-- [ ] Establish per-service schema/migration conventions.
-- [ ] Establish event contract/versioning conventions.
-- [ ] Establish shared error handling and reason-code conventions.
-- [ ] Establish test infrastructure.
-- [ ] Verify user ownership/security boundaries.
+- [x] Confirm monorepo/service structure.
+- [x] Establish `apps/web`.
+- [x] Establish service boundaries under `services/`:
+  - [x] `services/auth`
+  - [x] `services/profile`
+  - [x] `services/career-goals`
+  - [x] `services/resume`
+  - [x] `services/digital-twin`
+  - [x] `services/health-check`
+- [x] Establish shared packages:
+  - [x] `packages/event-bus` (event bus client)
+  - [x] `packages/ai-client` (AI reasoning client)
+  - [x] `packages/shared-types`
+  - [x] `packages/database`
+  - [x] `packages/errors`
+  - [x] `packages/logger`
+  - [x] `packages/validation`
+- [x] Establish authentication/session handling.
+- [x] Establish API conventions under `/api/v1/`.
+- [x] Establish per-service schema/migration conventions.
+- [x] Establish event contract/versioning conventions.
+- [x] Establish shared error handling and reason-code conventions.
+- [x] Establish test infrastructure.
+- [x] Verify user ownership/security boundaries.
 
 ### Phase 1 — User Profile
 
@@ -50,12 +60,12 @@ The architecture defines dependencies between modules. The sequence below follow
 
 **Purpose:** Maintain the user's core profile used by downstream career features.
 
-- [ ] Implement User Profile domain model.
-- [ ] Implement profile persistence and migrations.
-- [ ] Implement profile API.
-- [ ] Enforce authenticated user ownership.
-- [ ] Publish `profile.updated`.
-- [ ] Add unit, integration, API, and security tests.
+- [x] Implement User Profile domain model.
+- [x] Implement profile persistence and migrations.
+- [x] Implement profile API.
+- [x] Enforce authenticated user ownership.
+- [x] Publish `profile.updated`.
+- [x] Add unit, integration, API, and security tests.
 
 **Downstream consumers:** Career Goals, AI Roadmap Engine, Career Digital Twin, Recommendation Engine.
 
@@ -67,16 +77,16 @@ The architecture defines dependencies between modules. The sequence below follow
 
 **MVP boundary:** One active career goal.
 
-- [ ] Implement Career Goal domain model.
-- [ ] Implement one-active-goal application rule.
-- [ ] Implement goal creation/update/archive lifecycle.
-- [ ] Implement persistence and migrations.
-- [ ] Implement goal APIs.
-- [ ] Publish `goal.created`.
-- [ ] Publish `goal.changed`.
-- [ ] Enforce user ownership.
-- [ ] Add validation and business-rule tests.
-- [ ] Add event contract tests.
+- [x] Implement Career Goal domain model.
+- [x] Implement one-active-goal application rule.
+- [x] Implement goal creation/update/archive lifecycle.
+- [x] Implement persistence and migrations.
+- [x] Implement goal APIs.
+- [x] Publish `goal.created`.
+- [x] Publish `goal.changed`.
+- [x] Enforce user ownership.
+- [x] Add validation and business-rule tests.
+- [x] Add event contract tests.
 
 **Downstream consumers:** AI Roadmap Engine, Career Readiness Engine, Recommendation Engine, Career Digital Twin.
 
@@ -109,19 +119,19 @@ Architecture requires this flow:
 
 `Application → AI Orchestration → Context Builder → Provider Abstraction → LLM → Response Validator → Application`
 
-- [ ] Implement AI orchestration entry point.
-- [ ] Implement task-type routing.
-- [ ] Implement context assembly interfaces.
-- [ ] Implement provider abstraction.
-- [ ] Configure the MVP provider according to repository configuration.
-- [ ] Implement provider-agnostic request/response shapes.
-- [ ] Implement structured-output validation.
-- [ ] Implement bounded retry/fallback behavior.
-- [ ] Implement timeout handling.
-- [ ] Implement centralized rate-limit handling.
-- [ ] Implement prompt/template versioning.
-- [ ] Implement AI security boundaries and user-data isolation.
-- [ ] Add provider abstraction tests and validator tests.
+- [x] Implement AI orchestration entry point.
+- [x] Implement task-type routing.
+- [x] Implement context assembly interfaces.
+- [x] Implement provider abstraction.
+- [x] Configure the MVP provider according to repository configuration.
+- [x] Implement provider-agnostic request/response shapes.
+- [x] Implement structured-output validation.
+- [x] Implement bounded retry/fallback behavior.
+- [x] Implement timeout handling.
+- [x] Implement centralized rate-limit handling.
+- [x] Implement prompt/template versioning.
+- [x] Implement AI security boundaries and user-data isolation.
+- [x] Add provider abstraction tests and validator tests.
 
 ### Phase 5 — AI Personalized Roadmap Engine
 
@@ -133,24 +143,24 @@ Architecture requires this flow:
 
 `Roadmap → Module → Topic → Subtopic → Checklist Item`
 
-- [ ] Implement Roadmap domain model.
-- [ ] Implement Module, Topic, Subtopic, Checklist Item models.
-- [ ] Implement dependencies.
-- [ ] Implement Mandatory / Recommended / Optional node types.
-- [ ] Implement roadmap generation orchestration.
-- [ ] Implement roadmap context retrieval.
-- [ ] Implement structured roadmap output validation.
-- [ ] Implement dependency-graph validation.
-- [ ] Protect Mandatory nodes at the backend.
-- [ ] Implement roadmap versioning.
-- [ ] Preserve prior versions.
-- [ ] Implement generation and regeneration lifecycle.
-- [ ] Publish `roadmap.generated`.
+- [x] Implement Roadmap domain model.
+- [x] Implement Module, Topic, Subtopic, Checklist Item models.
+- [x] Implement dependencies.
+- [x] Implement Mandatory / Recommended / Optional node types.
+- [x] Implement roadmap generation orchestration.
+- [x] Implement roadmap context retrieval.
+- [x] Implement structured roadmap output validation.
+- [x] Implement dependency-graph validation.
+- [x] Protect Mandatory nodes at the backend.
+- [x] Implement roadmap versioning.
+- [x] Preserve prior versions.
+- [x] Implement generation and regeneration lifecycle.
+- [x] Publish `roadmap.generated`.
 - [ ] Publish `roadmap.regenerated`.
-- [ ] Publish `roadmap.node.completed`.
-- [ ] Implement documented roadmap APIs.
-- [ ] Add generation, validation, dependency, versioning, event, and API tests.
-- [ ] Add frontend roadmap views and customization allowed by the architecture.
+- [x] Publish `roadmap.node.completed`.
+- [x] Implement documented roadmap APIs.
+- [x] Add generation, validation, dependency, versioning, event, and API tests.
+- [x] Add frontend roadmap views and customization allowed by the architecture.
 
 ### Phase 6 — Learning Progress Tracking
 
@@ -239,31 +249,31 @@ Architecture requires this flow:
 
 **Core partitions:**
 
-- Identity State
-- Career Goal State
-- Skill State
-- Learning State
-- Evidence State
-- Project State
-- Interview State
-- Recommendation State
-- Readiness State
-- Conversation Metadata
+- [x] Identity State
+- [x] Career Goal State
+- [ ] Skill State
+- [ ] Learning State
+- [ ] Evidence State
+- [ ] Project State
+- [ ] Interview State
+- [ ] Recommendation State
+- [ ] Readiness State
+- [ ] Conversation Metadata
 
-- [ ] Implement context store.
-- [ ] Implement partition model.
-- [ ] Implement event subscriber.
-- [ ] Make event handling idempotent.
-- [ ] Update only affected partitions.
-- [ ] Implement context retrieval interface.
-- [ ] Implement partition-aware context builder.
-- [ ] Implement context serialization/compression/validation.
-- [ ] Implement context versioning.
+- [x] Implement context store.
+- [x] Implement partition model.
+- [x] Implement event subscriber.
+- [x] Make event handling idempotent.
+- [x] Update only affected partitions.
+- [x] Implement context retrieval interface.
+- [x] Implement partition-aware context builder.
+- [x] Implement context serialization/compression/validation.
+- [x] Implement context versioning.
 - [ ] Implement cache/invalidation strategy.
 - [ ] Publish `twin.updated` / `twin.context.updated` where specified.
-- [ ] Implement documented context APIs.
-- [ ] Add synchronization, partition, cache, versioning, event, and security tests.
-- [ ] Do not add business-data ownership to the Twin.
+- [x] Implement documented context APIs.
+- [x] Add synchronization, partition, versioning, event, and security tests.
+- [x] Do not add business-data ownership to the Twin.
 
 ### Phase 11 — AI Mock Interview System
 
