@@ -30,8 +30,11 @@ describe('Auth Service Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await UserModel.deleteMany({ email: testEmail.toLowerCase() });
-    await SessionModel.deleteMany({ userId: { $regex: /.*/ } });
+    const testUser = await UserModel.findOne({ email: testEmail.toLowerCase() });
+    if (testUser) {
+      await SessionModel.deleteMany({ userId: testUser._id.toHexString() });
+      await UserModel.deleteOne({ _id: testUser._id });
+    }
     await disconnectDatabase();
   });
 
