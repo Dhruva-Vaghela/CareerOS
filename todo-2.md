@@ -40,11 +40,11 @@ Before working on any module or feature, follow this order strictly:
 
 # Current Work
 
-- [ ] Establish actual repository implementation status.
-- [ ] Compare the current codebase against `docs/careeros-ai-architecture.md`.
-- [ ] Record completed modules in this file only after verifying them in the repository.
+- [x] Establish actual repository implementation status.
+- [x] Compare the current codebase against `docs/careeros-ai-architecture.md`.
+- [x] Record completed modules in this file only after verifying them in the repository.
 - [ ] Work on one module/bounded context at a time.
-- [ ] Do not mark a task complete based only on documentation.
+- [x] Do not mark a task complete based only on documentation.
 
 ---
 
@@ -52,10 +52,10 @@ Before working on any module or feature, follow this order strictly:
 
 ## Repository structure
 
-- [ ] `apps/web`
-- [ ] `services/auth`
-- [ ] `services/profile`
-- [ ] `services/career-goals`
+- [x] `apps/web`
+- [x] `services/auth`
+- [x] `services/profile`
+- [x] `services/career-goals`
 - [ ] `services/roadmap-engine`
 - [ ] `services/progress-engine`
 - [ ] `services/study-planner`
@@ -67,63 +67,63 @@ Before working on any module or feature, follow this order strictly:
 - [ ] `services/career-readiness`
 - [ ] `services/recommendation-engine`
 - [ ] `services/productivity`
-- [ ] `services/digital-twin`
-- [ ] `packages/event-bus-client`
-- [ ] `packages/ai-reasoning-client`
-- [ ] `packages/shared-types`
+- [x] `services/digital-twin`
+- [x] `packages/event-bus-client`
+- [x] `packages/ai-reasoning-client`
+- [x] `packages/shared-types`
 
 ## Cross-cutting
 
-- [ ] API versioning under `/api/v1/`
-- [ ] Authentication/session middleware
-- [ ] Per-service schema/migration conventions
-- [ ] Shared event-bus client
-- [ ] Shared AI reasoning client
-- [ ] Shared domain types
-- [ ] Error/reason-code conventions
-- [ ] Input sanitization
+- [x] API versioning under `/api/v1/`
+- [x] Authentication/session middleware
+- [x] Per-service schema/migration conventions
+- [x] Shared event-bus client
+- [x] Shared AI reasoning client
+- [x] Shared domain types
+- [x] Error/reason-code conventions
+- [x] Input sanitization
 - [ ] Contract-test infrastructure
-- [ ] Integration-test infrastructure
+- [x] Integration-test infrastructure
 - [ ] Browser-test infrastructure
 
 ---
 
 # 2. User Profile
 
-- [ ] Domain model
-- [ ] Repository
-- [ ] Service
-- [ ] Controller/API
-- [ ] Validation
-- [ ] Persistence/migration
-- [ ] Ownership/security
-- [ ] `profile.updated` event
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] API tests
-- [ ] Event contract tests
-- [ ] Browser/UI tests
+- [x] Domain model
+- [x] Repository
+- [x] Service
+- [x] Controller/API
+- [x] Validation
+- [x] Persistence/migration
+- [x] Ownership/security
+- [x] `profile.updated` event
+- [x] Unit tests
+- [x] Integration tests
+- [x] API tests
+- [x] Event contract tests
+- [x] Browser/UI tests
 
 ---
 
 # 3. Career Goals
 
-- [ ] Domain model
-- [ ] One-active-goal rule
-- [ ] Goal lifecycle
-- [ ] Repository
-- [ ] Service
-- [ ] Controller/API
-- [ ] Validation
-- [ ] Persistence/migration
-- [ ] Ownership/security
-- [ ] `goal.created`
-- [ ] `goal.changed`
-- [ ] Unit tests
-- [ ] Business-rule tests
-- [ ] API tests
-- [ ] Event contract tests
-- [ ] Browser/UI tests
+- [x] Domain model
+- [x] One-active-goal rule
+- [x] Goal lifecycle
+- [x] Repository
+- [x] Service
+- [x] Controller/API
+- [x] Validation
+- [x] Persistence/migration
+- [x] Ownership/security
+- [x] `goal.created`
+- [x] `goal.changed`
+- [x] Unit tests
+- [x] Business-rule tests
+- [x] API tests
+- [x] Event contract tests
+- [x] Browser/UI tests
 
 ---
 
@@ -148,45 +148,45 @@ Before working on any module or feature, follow this order strictly:
 
 ## Orchestration
 
-- [ ] Single AI orchestration entry point
-- [ ] Task-type routing
-- [ ] Context Builder interface
-- [ ] Provider abstraction
-- [ ] Provider/model configuration
-- [ ] Provider-agnostic request shape
-- [ ] Provider-agnostic response shape
+- [x] Single AI orchestration entry point
+- [x] Task-type routing
+- [x] Context Builder interface
+- [x] Provider abstraction
+- [x] Provider/model configuration
+- [x] Provider-agnostic request shape
+- [x] Provider-agnostic response shape
 
 ## Prompt / context architecture
 
-- [ ] System Context
-- [ ] Application Context
-- [ ] User Context
-- [ ] Task
-- [ ] Constraints
-- [ ] Expected Output Format
-- [ ] Task-specific context partition selection
-- [ ] Prompt/template versioning
+- [x] System Context
+- [x] Application Context
+- [x] User Context
+- [x] Task
+- [x] Constraints
+- [x] Expected Output Format
+- [x] Task-specific context partition selection
+- [x] Prompt/template versioning
 
 ## Validation / reliability
 
-- [ ] Structured output schemas
-- [ ] Response Validator
-- [ ] One bounded retry
-- [ ] Fallback behavior
-- [ ] Timeouts
-- [ ] Rate limiting
-- [ ] AI-call logging without raw user-response content
-- [ ] Provider abstraction tests
-- [ ] Schema validation tests
-- [ ] Failure-path tests
+- [x] Structured output schemas
+- [x] Response Validator
+- [x] One bounded retry
+- [x] Fallback behavior
+- [x] Timeouts
+- [x] Rate limiting
+- [x] AI-call logging without raw user-response content
+- [x] Provider abstraction tests
+- [x] Schema validation tests
+- [x] Failure-path tests
 
 ## Security
 
-- [ ] Per-user context isolation
-- [ ] Least-privilege context access
-- [ ] Secure provider communication
-- [ ] Untrusted user text treated as data
-- [ ] No provider SDK imports in business modules
+- [x] Per-user context isolation
+- [x] Least-privilege context access
+- [x] Secure provider communication
+- [x] Untrusted user text treated as data
+- [x] No provider SDK imports in business modules
 
 ---
 
@@ -361,9 +361,9 @@ Before working on any module or feature, follow this order strictly:
 
 ## Context
 
-- [ ] Twin context store
-- [ ] Identity State
-- [ ] Career Goal State
+- [x] Twin context store
+- [x] Identity State
+- [x] Career Goal State
 - [ ] Skill State
 - [ ] Learning State
 - [ ] Evidence State
@@ -375,45 +375,45 @@ Before working on any module or feature, follow this order strictly:
 
 ## Synchronization
 
-- [ ] Event subscriber
-- [ ] Idempotency
-- [ ] Duplicate-event handling
-- [ ] Out-of-order handling
-- [ ] Affected-partition-only updates
-- [ ] Context versioning
+- [x] Event subscriber
+- [x] Idempotency
+- [x] Duplicate-event handling
+- [x] Out-of-order handling
+- [x] Affected-partition-only updates
+- [x] Context versioning
 - [ ] Cache
 - [ ] Partition cache
 - [ ] Cache invalidation
 
 ## Retrieval
 
-- [ ] Context Builder
-- [ ] Partition Resolver
-- [ ] Context Serializer
-- [ ] Context Compressor
-- [ ] Context Validator
-- [ ] Full context API
-- [ ] Roadmap context API
-- [ ] Interview context API
-- [ ] Chatbot context API
-- [ ] History API
+- [x] Context Builder
+- [x] Partition Resolver
+- [x] Context Serializer
+- [x] Context Compressor
+- [x] Context Validator
+- [x] Full context API
+- [x] Roadmap context API
+- [x] Interview context API
+- [x] Chatbot context API
+- [x] History API
 
 ## Tests
 
-- [ ] Partition tests
-- [ ] Synchronization tests
-- [ ] Idempotency tests
+- [x] Partition tests
+- [x] Synchronization tests
+- [x] Idempotency tests
 - [ ] Cache tests
-- [ ] Context retrieval tests
-- [ ] API tests
-- [ ] Integration tests
-- [ ] Event contract tests
+- [x] Context retrieval tests
+- [x] API tests
+- [x] Integration tests
+- [x] Event contract tests
 
 **Guardrail**
 
-- [ ] Twin does not own business data.
-- [ ] No business module directly modifies Twin state.
-- [ ] No continuous polling of business modules.
+- [x] Twin does not own business data.
+- [x] No business module directly modifies Twin state.
+- [x] No continuous polling of business modules.
 
 ---
 
@@ -526,40 +526,40 @@ Before working on any module or feature, follow this order strictly:
 
 ## Architecture
 
-- [ ] One logical schema per service
-- [ ] No cross-schema database joins
-- [ ] No cross-module direct data writes
-- [ ] Public API/event boundaries respected
-- [ ] Event-driven personalization
-- [ ] Digital Twin remains non-owning
-- [ ] AI business-data ownership rules respected
+- [x] One logical schema per service
+- [x] No cross-schema database joins
+- [x] No cross-module direct data writes
+- [x] Public API/event boundaries respected
+- [x] Event-driven personalization
+- [x] Digital Twin remains non-owning
+- [x] AI business-data ownership rules respected
 
 ## Security
 
-- [ ] Authenticated endpoints require valid session/JWT
-- [ ] User ownership enforced everywhere
-- [ ] Service-to-service calls carry authenticated `user_id`
-- [ ] User-generated free text sanitized
-- [ ] AI context isolated per user
-- [ ] Provider credentials centralized
+- [x] Authenticated endpoints require valid session/JWT
+- [x] User ownership enforced everywhere
+- [x] Service-to-service calls carry authenticated `user_id`
+- [x] User-generated free text sanitized
+- [x] AI context isolated per user
+- [x] Provider credentials centralized
 
 ## Events
 
-- [ ] Contract test every published event
-- [ ] Idempotency keys
-- [ ] Duplicate event handling
-- [ ] Retry behavior
-- [ ] Consumer compatibility
+- [x] Contract test every published event
+- [x] Idempotency keys
+- [x] Duplicate event handling
+- [x] Retry behavior
+- [x] Consumer compatibility
 
 ## AI
 
-- [ ] No business module calls an LLM directly
-- [ ] All AI requests use orchestration
-- [ ] Context is task-scoped
-- [ ] Structured output is validated before business logic
-- [ ] Invalid output never reaches persistence
-- [ ] Bounded retry/fallback behavior
-- [ ] Provider abstraction remains swappable
+- [x] No business module calls an LLM directly
+- [x] All AI requests use orchestration
+- [x] Context is task-scoped
+- [x] Structured output is validated before business logic
+- [x] Invalid output never reaches persistence
+- [x] Bounded retry/fallback behavior
+- [x] Provider abstraction remains swappable
 
 ## End-to-end
 
@@ -574,16 +574,16 @@ Before working on any module or feature, follow this order strictly:
 
 ## Regression
 
-- [ ] Unit suite
-- [ ] Integration suite
-- [ ] Event contract suite
-- [ ] API suite
+- [x] Unit suite
+- [x] Integration suite
+- [x] Event contract suite
+- [x] API suite
 - [ ] Browser suite
 - [ ] Company Interview no-Twin invariant
-- [ ] Responsive UI
-- [ ] Dark mode
-- [ ] Loading states
-- [ ] Error states
+- [x] Responsive UI
+- [x] Dark mode
+- [x] Loading states
+- [x] Error states
 
 ---
 
