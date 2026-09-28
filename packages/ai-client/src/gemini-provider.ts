@@ -45,6 +45,11 @@ export class GeminiProvider implements AIProvider {
     }
 
     try {
+      const hasDefinedSchema =
+        request.options?.responseSchema &&
+        typeof request.options.responseSchema === 'object' &&
+        'properties' in request.options.responseSchema;
+
       const result = await this.withTimeout(
         this.client.models.generateContent({
           model,
@@ -54,7 +59,7 @@ export class GeminiProvider implements AIProvider {
             topP: request.options?.topP ?? this.config.topP,
             maxOutputTokens: request.options?.maxOutputTokens ?? this.config.maxOutputTokens,
             responseMimeType: request.options?.responseSchema ? 'application/json' : undefined,
-            responseJsonSchema: request.options?.responseSchema,
+            responseJsonSchema: hasDefinedSchema ? request.options?.responseSchema : undefined,
           },
         }),
         timeoutMs,
@@ -87,10 +92,12 @@ export class GeminiProvider implements AIProvider {
       return response;
     } catch (error) {
       const providerError = this.toProviderError(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(
         {
           requestId: request.requestId,
           code: providerError.code,
+          message: errorMessage,
           latencyMs: Date.now() - startedAt,
         },
         'AI request failed',
@@ -105,7 +112,7 @@ export class GeminiProvider implements AIProvider {
           providerModel: model,
         },
         latencyMs: Date.now() - startedAt,
-        errors: [{ code: providerError.code, message: providerError.message }],
+        errors: [{ code: providerError.code, message: errorMessage }],
       };
     }
   }
@@ -137,6 +144,7 @@ export class GeminiProvider implements AIProvider {
     ) {
       return new AuthenticationError();
     }
-    return new ProviderError('Gemini provider request failed.');
+    const message = error instanceof Error ? error.message : 'Gemini provider request failed.';
+    return new ProviderError(message);
   }
 }
