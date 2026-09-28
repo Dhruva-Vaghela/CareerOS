@@ -9,7 +9,7 @@ export * from './context-contracts.js';
 export * from './context-selector.js';
 export * from './context-serializer.js';
 export * from './contracts.js';
-export * from './gemini-provider.js';
+export * from './groq-provider.js';
 export * from './legacy-client.js';
 export * from './provider-factory.js';
 export * from './prompt-loader.js';

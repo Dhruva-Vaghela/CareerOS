@@ -35,8 +35,8 @@ Before starting, ensure your system meets the following requirements:
 4. **MongoDB**:
    - **Recommended**: Free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster connection string (`mongodb+srv://...`).
    - **Alternative**: Local MongoDB running on `mongodb://localhost:27017/careeros`.
-5. **Google Gemini API Key**:
-   - Obtain a free API key from [Google AI Studio](https://aistudio.google.com/).
+5. **Groq API Key**:
+   - Obtain an API key from [Groq Console](https://console.groq.com/).
 6. **Cloudinary (Optional)**:
    - For resume file uploads. The repository includes default development credentials in `.env_Example`, or you can supply your own Cloudinary cloud credentials.
 
@@ -94,11 +94,13 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloud_key
 CLOUDINARY_API_SECRET=your_secret_key
 
-# AI Configuration (Gemini)
-AI_PROVIDER=gemini
-GEMINI_API_KEY=your_gemini_api_key
-AI_DEFAULT_MODEL=gemini-1.5-flash
-AI_FALLBACK_MODEL=gemini-1.5-pro
+# AI Configuration (Groq)
+AI_PROVIDER=groq
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.3-70b-versatile
+AI_DEFAULT_MODEL=llama-3.3-70b-versatile
+AI_FAST_MODEL=llama-3.1-8b-instant
+AI_FALLBACK_MODEL=llama-3.3-70b-versatile
 
 # Security
 JWT_SECRET=your-random-jwt-secret-string-at-least-32-chars

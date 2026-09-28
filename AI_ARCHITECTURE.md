@@ -73,9 +73,9 @@ The context path is `AIRequest → Task Registry → Context Builder → AIOrche
 - Translating that provider's raw response back into the provider-agnostic response shape the Response Validator expects.
 - Selecting which configured provider/model serves a given task type, based on configuration external to business logic.
 
-**Primary Provider (current MVP):** Google Gemini.
+**Primary Provider:** Groq.
 
-**Future Providers (architecturally anticipated, not implemented in MVP):** OpenAI, Anthropic, Groq, OpenRouter.
+**Other Supported / Future Providers:** Google Gemini, OpenAI, Anthropic, OpenRouter.
 
 **How providers can be swapped without affecting business logic:** because no business module ever imports a provider SDK or constructs a provider-specific request, swapping — or running multiple providers simultaneously for different task types — is entirely a change inside the Provider Abstraction layer and its configuration. Business modules, the Context Builder, and the Response Validator are provider-agnostic by construction and require no changes when a provider is added, removed, or reassigned to a different task.
 

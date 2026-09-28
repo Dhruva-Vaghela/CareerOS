@@ -411,7 +411,7 @@ export const RoadmapView: React.FC = () => {
           Personalized AI Learning Roadmap
         </h2>
         <p style={{ color: '#64748b', fontSize: '0.95rem', maxWidth: '520px', margin: '0 auto 2rem', lineHeight: 1.6 }}>
-          Generate a dynamic, structured learning path tailored to your career goals, target companies, and current skillset using Gemini AI.
+          Generate a dynamic, structured learning path tailored to your career goals, target companies, and current skillset using AI.
         </p>
 
         {error && (
@@ -426,7 +426,7 @@ export const RoadmapView: React.FC = () => {
           style={{ padding: '0.85rem 2rem', fontSize: '1rem', margin: '0 auto' }}
         >
           <Sparkles size={18} style={{ marginRight: '0.5rem' }} />
-          {isGenerating ? 'Gemini AI is Crafting Your Curriculum...' : 'Generate My AI Roadmap'}
+          {isGenerating ? 'AI is Crafting Your Curriculum...' : 'Generate My AI Roadmap'}
         </Button>
       </div>
     );
@@ -466,7 +466,7 @@ export const RoadmapView: React.FC = () => {
               style={{ width: 'auto', padding: '0.4rem 0.85rem', fontSize: '0.85rem' }}
               onClick={handleGenerateRoadmap}
               isLoading={isGenerating}
-              title="Regenerate with Gemini AI"
+              title="Regenerate with AI"
             >
               <RefreshCw size={14} style={{ marginRight: '0.4rem' }} className={isGenerating ? 'animate-spin' : ''} />
               {isGenerating ? 'Regenerating...' : 'Regenerate'}

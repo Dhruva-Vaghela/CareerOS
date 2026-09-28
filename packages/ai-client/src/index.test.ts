@@ -3,15 +3,15 @@ import { ConfigurationError, UnsupportedProviderError } from '@careeros/errors';
 import type { AIConfig } from './config.js';
 import { loadAIConfig, resolveModelAlias } from './config.js';
 import type { AIRequest, AIResponse } from './contracts.js';
-import { GeminiProvider, type GeminiClient } from './gemini-provider.js';
+import { GroqProvider, type GroqClient } from './groq-provider.js';
 import { ProviderFactory } from './provider-factory.js';
 
 const environment: NodeJS.ProcessEnv = {
-  AI_PROVIDER: 'gemini',
-  GEMINI_API_KEY: 'test-key',
-  AI_DEFAULT_MODEL: 'gemini-default',
-  AI_FAST_MODEL: 'gemini-fast',
-  AI_FALLBACK_MODEL: 'gemini-reasoning',
+  AI_PROVIDER: 'groq',
+  GROQ_API_KEY: 'test-key',
+  AI_DEFAULT_MODEL: 'llama-3.3-70b-versatile',
+  AI_FAST_MODEL: 'llama-3.1-8b-instant',
+  AI_FALLBACK_MODEL: 'llama-3.3-70b-versatile',
   AI_TEMPERATURE: '0.2',
   AI_TOP_P: '0.9',
   AI_MAX_OUTPUT_TOKENS: '1024',
@@ -34,23 +34,38 @@ describe('AI configuration', () => {
   it('loads configuration and resolves provider-neutral model aliases', () => {
     const config = loadAIConfig(environment);
 
-    expect(config.provider).toBe('gemini');
-    expect(resolveModelAlias(config, 'DEFAULT_MODEL')).toBe('gemini-default');
-    expect(resolveModelAlias(config, 'FAST_MODEL')).toBe('gemini-fast');
-    expect(resolveModelAlias(config, 'REASONING_MODEL')).toBe('gemini-reasoning');
+    expect(config.provider).toBe('groq');
+    expect(resolveModelAlias(config, 'DEFAULT_MODEL')).toBe('llama-3.3-70b-versatile');
+    expect(resolveModelAlias(config, 'FAST_MODEL')).toBe('llama-3.1-8b-instant');
+    expect(resolveModelAlias(config, 'REASONING_MODEL')).toBe('llama-3.3-70b-versatile');
+  });
+
+  it('supports GROQ_MODEL environment variable as fallback for default model', () => {
+    const customEnv: NodeJS.ProcessEnv = {
+      ...environment,
+      AI_DEFAULT_MODEL: undefined,
+      AI_FAST_MODEL: undefined,
+      AI_FALLBACK_MODEL: undefined,
+      GROQ_MODEL: 'llama-3.3-70b-versatile',
+    };
+    const config = loadAIConfig(customEnv);
+
+    expect(config.defaultModel).toBe('llama-3.3-70b-versatile');
+    expect(config.fastModel).toBe('llama-3.3-70b-versatile');
+    expect(config.fallbackModel).toBe('llama-3.3-70b-versatile');
   });
 
   it('rejects incomplete configuration', () => {
-    expect(() => loadAIConfig({ ...environment, GEMINI_API_KEY: '' })).toThrow(ConfigurationError);
+    expect(() => loadAIConfig({ ...environment, GROQ_API_KEY: '' })).toThrow(ConfigurationError);
   });
 });
 
 describe('ProviderFactory', () => {
-  it('returns GeminiProvider for the configured Gemini provider', () => {
+  it('returns GroqProvider for the configured Groq provider', () => {
     const factory = new ProviderFactory(loadAIConfig(environment));
 
-    expect(factory.getProvider()).toBeInstanceOf(GeminiProvider);
-    expect(factory.resolveModel('FAST_MODEL')).toBe('gemini-fast');
+    expect(factory.getProvider()).toBeInstanceOf(GroqProvider);
+    expect(factory.resolveModel('FAST_MODEL')).toBe('llama-3.1-8b-instant');
   });
 
   it('throws a descriptive error when the configured provider is unsupported', () => {
@@ -61,27 +76,35 @@ describe('ProviderFactory', () => {
   });
 });
 
-describe('GeminiProvider', () => {
-  it('delegates to the Google Gen AI SDK and returns a structured success response', async () => {
-    const generateContent = vi.fn().mockResolvedValue({
-      text: '{"title":"Backend roadmap"}',
-      candidates: [{ finishReason: 'STOP' }],
+describe('GroqProvider', () => {
+  it('delegates to the Groq SDK and returns a structured success response', async () => {
+    const create = vi.fn().mockResolvedValue({
+      choices: [
+        {
+          message: { content: '{"title":"Backend roadmap"}' },
+          finish_reason: 'stop',
+        },
+      ],
     });
-    const client: GeminiClient = { models: { generateContent } };
-    const provider = new GeminiProvider(loadAIConfig(environment), client);
+    const client: GroqClient = { chat: { completions: { create } } };
+    const provider = new GroqProvider(loadAIConfig(environment), client);
 
     const response = await provider.generate<{ title: string }>(
       { ...request, options: { responseSchema: { type: 'object' } } },
-      'gemini-default',
+      'llama-3.3-70b-versatile',
       'DEFAULT_MODEL',
     );
 
-    expect(generateContent).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'gemini-default', contents: 'Generate a roadmap.' }),
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'llama-3.3-70b-versatile',
+        messages: expect.arrayContaining([{ role: 'user', content: 'Generate a roadmap.' }]),
+        response_format: { type: 'json_object' },
+      }),
     );
     expect(response).toMatchObject({
       success: true,
-      provider: 'gemini',
+      provider: 'groq',
       modelAlias: 'DEFAULT_MODEL',
       data: { title: 'Backend roadmap' },
       errors: [],
@@ -89,14 +112,14 @@ describe('GeminiProvider', () => {
   });
 
   it('returns a structured timeout error', async () => {
-    const client: GeminiClient = {
-      models: { generateContent: () => new Promise(() => undefined) },
+    const client: GroqClient = {
+      chat: { completions: { create: () => new Promise(() => undefined) } },
     };
-    const provider = new GeminiProvider(loadAIConfig(environment), client);
+    const provider = new GroqProvider(loadAIConfig(environment), client);
 
     const response = await provider.generate(
       { ...request, options: { timeoutMs: 1 } },
-      'gemini-default',
+      'llama-3.3-70b-versatile',
       'DEFAULT_MODEL',
     );
 
@@ -108,13 +131,13 @@ describe('AI contracts', () => {
   it('supports the reusable request and response contract shapes', () => {
     const response: AIResponse<string> = {
       success: true,
-      provider: 'gemini',
+      provider: 'groq',
       modelAlias: 'DEFAULT_MODEL',
       data: 'generated content',
       metadata: {
         requestId: request.requestId,
         timestamp: new Date(),
-        providerModel: 'gemini-default',
+        providerModel: 'llama-3.3-70b-versatile',
       },
       latencyMs: 10,
       errors: [],

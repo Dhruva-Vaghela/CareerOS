@@ -3,7 +3,7 @@ import type { AIModelAlias, AIProviderName } from './contracts.js';
 
 export interface AIConfig {
   provider: AIProviderName;
-  geminiApiKey: string;
+  groqApiKey: string;
   defaultModel: string;
   fastModel: string;
   fallbackModel: string;
@@ -17,10 +17,10 @@ export interface AIConfig {
 }
 
 const SUPPORTED_PROVIDERS: readonly AIProviderName[] = [
-  'gemini',
+  'groq',
   'openai',
   'claude',
-  'groq',
+  'gemini',
   'openrouter',
 ];
 
@@ -51,12 +51,27 @@ export function loadAIConfig(environment: NodeJS.ProcessEnv = process.env): AICo
     throw new ConfigurationError(`AI_PROVIDER "${providerValue}" is not supported.`);
   }
 
+  const defaultModel =
+    environment.AI_DEFAULT_MODEL?.trim() ||
+    environment.GROQ_MODEL?.trim() ||
+    'openai/gpt-oss-120b';
+
+  const fastModel =
+    environment.AI_FAST_MODEL?.trim() ||
+    environment.GROQ_FAST_MODEL?.trim() ||
+    (defaultModel === 'openai/gpt-oss-120b' ? 'openai/gpt-oss-20b' : defaultModel);
+
+  const fallbackModel =
+    environment.AI_FALLBACK_MODEL?.trim() ||
+    environment.GROQ_FALLBACK_MODEL?.trim() ||
+    defaultModel;
+
   return {
     provider: providerValue as AIProviderName,
-    geminiApiKey: requireValue(environment, 'GEMINI_API_KEY'),
-    defaultModel: requireValue(environment, 'AI_DEFAULT_MODEL'),
-    fastModel: requireValue(environment, 'AI_FAST_MODEL'),
-    fallbackModel: requireValue(environment, 'AI_FALLBACK_MODEL'),
+    groqApiKey: requireValue(environment, 'GROQ_API_KEY'),
+    defaultModel,
+    fastModel,
+    fallbackModel,
     temperature: readNumber(environment, 'AI_TEMPERATURE'),
     topP: readNumber(environment, 'AI_TOP_P'),
     maxOutputTokens: readNumber(environment, 'AI_MAX_OUTPUT_TOKENS'),

@@ -4,13 +4,13 @@ import { RetryEngine } from './retry-engine.js';
 
 const successResponse: AIResponse<{ title: string }> = {
   success: true,
-  provider: 'gemini',
+  provider: 'groq',
   modelAlias: 'DEFAULT_MODEL',
   data: { title: 'Backend roadmap' },
   metadata: {
     requestId: 'request-1',
     timestamp: new Date('2026-01-01T00:00:00.000Z'),
-    providerModel: 'gemini-default',
+    providerModel: 'llama-3.3-70b-versatile',
   },
   latencyMs: 1,
   errors: [],
@@ -18,9 +18,9 @@ const successResponse: AIResponse<{ title: string }> = {
 
 const context = {
   requestId: 'request-1',
-  provider: 'gemini' as const,
+  provider: 'groq' as const,
   modelAlias: 'DEFAULT_MODEL' as const,
-  providerModel: 'gemini-default',
+  providerModel: 'llama-3.3-70b-versatile',
 };
 
 describe('RetryEngine', () => {

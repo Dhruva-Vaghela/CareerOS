@@ -5,7 +5,7 @@ const event = {
   requestId: 'request-1',
   executionId: 'execution-1',
   task: 'ROADMAP_GENERATION',
-  provider: 'gemini' as const,
+  provider: 'groq' as const,
   modelAlias: 'REASONING_MODEL' as const,
   status: 'SUCCESS' as const,
   latencyMs: 42,

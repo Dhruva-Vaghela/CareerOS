@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { formatError, ValidationError, ConflictError } from '@careeros/errors';
 import { InMemoryEventBus } from '@careeros/event-bus';
-import { GeminiAIClient } from '@careeros/ai-client';
+import { GroqAIClient } from '@careeros/ai-client';
 import { logger } from '@careeros/logger';
 
 describe('CareerOS Foundation Core Verifications', () => {
@@ -102,17 +102,17 @@ describe('CareerOS Foundation Core Verifications', () => {
   // 5. AI Client Fallbacks & Resilience verification
   describe('AI Client Fallback System', () => {
     beforeEach(() => {
-      process.env.GEMINI_API_KEY = 'mock'; // force client to run in mock mode
+      process.env.GROQ_API_KEY = 'mock'; // force client to run in mock mode
     });
 
     it('should fall back to provided defaults on text failure', async () => {
-      const client = new GeminiAIClient();
+      const client = new GroqAIClient();
       const text = await client.generateText('Write a bio', 'Default fallback biography text');
       expect(text).toBe('Default fallback biography text');
     });
 
     it('should fall back to provided structured object on structured schema failure', async () => {
-      const client = new GeminiAIClient();
+      const client = new GroqAIClient();
       const schema = {
         type: 'OBJECT',
         properties: {

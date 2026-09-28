@@ -115,7 +115,7 @@ Personalized Recommendations
 * **Frontend:** React 18, TypeScript, Vite, TailwindCSS / Vanilla CSS
 * **Backend:** Node.js (>=20.0.0), Express, TypeScript (`tsx`)
 * **Database:** MongoDB Atlas / Local MongoDB via Mongoose
-* **AI Orchestration:** Google Gemini Provider (`ai-client`) with structured outputs, prompt manager, retry engine, and telemetry
+* **AI Orchestration:** Groq Provider (`ai-client`) with structured outputs, prompt manager, retry engine, and telemetry
 * **File & Resume Storage:** Cloudinary (`services/resume`)
 * **Testing:** Vitest (unit & integration test suites)
 * **Code Quality:** ESLint & Prettier

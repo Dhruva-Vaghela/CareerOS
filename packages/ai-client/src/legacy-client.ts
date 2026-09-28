@@ -15,9 +15,9 @@ export interface IAIClient {
   ): Promise<T>;
 }
 
-export class GeminiAIClient implements IAIClient {
+export class GroqAIClient implements IAIClient {
   public async generateText(content: string, fallback?: string): Promise<string> {
-    if (process.env.GEMINI_API_KEY === 'mock' && fallback !== undefined) return fallback;
+    if (process.env.GROQ_API_KEY === 'mock' && fallback !== undefined) return fallback;
     const response = await this.getProvider().generate<string>(
       this.createRequest(content),
       this.getModel(),
@@ -33,7 +33,7 @@ export class GeminiAIClient implements IAIClient {
     responseSchema: Record<string, unknown>,
     fallback?: T,
   ): Promise<T> {
-    if (process.env.GEMINI_API_KEY === 'mock' && fallback !== undefined) return fallback;
+    if (process.env.GROQ_API_KEY === 'mock' && fallback !== undefined) return fallback;
     const response = await this.getProvider().generate<T>(
       { ...this.createRequest(content), options: { responseSchema } },
       this.getModel(),
@@ -67,3 +67,9 @@ export class GeminiAIClient implements IAIClient {
     };
   }
 }
+
+/**
+ * @deprecated Renamed to GroqAIClient.
+ */
+export const GeminiAIClient = GroqAIClient;
+export type GeminiAIClient = GroqAIClient;

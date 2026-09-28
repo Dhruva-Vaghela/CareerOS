@@ -74,7 +74,7 @@ const GeneratedModuleSchema = z.object({
 
 export const GeneratedRoadmapSchema = z.object({
   targetRole: z.string().min(1),
-  modules: z.array(GeneratedModuleSchema).min(3),
+  modules: z.array(GeneratedModuleSchema).min(1),
 });
 
 export interface RoadmapGenerationInput {
@@ -119,6 +119,7 @@ export class AIGeneratorService {
           temperature: input.previousModuleTitles?.length ? 0.7 : 0.3,
           topP: 0.95,
           maxOutputTokens: 8192,
+          responseSchema: { type: 'object' },
         },
         metadata: { userId: input.userId },
         timestamp: new Date(),
@@ -147,7 +148,7 @@ export class AIGeneratorService {
 
     return `
 You are the CareerOS AI Senior Curriculum Architect.
-Generate a structured, rigorous, and highly actionable learning roadmap for a student/engineer aiming for the target role: "${input.targetRole}".
+Generate a structured, rigorous, and highly actionable learning roadmap for target role: "${input.targetRole}".
 
 User Profile:
 - Target Role: ${input.targetRole}
@@ -159,14 +160,11 @@ User Profile:
 ${regenerationGuidance}
 
 Requirements:
-1. Provide between 4 and 6 sequential Modules.
-2. Categorize each Module, Topic, and Subtopic as either:
-   - "MANDATORY": Core non-negotiable foundations required for any interview for this role.
-   - "RECOMMENDED": Production-level frameworks, testing, and modern industry workflows.
-   - "OPTIONAL": Specialized niches, advanced scale patterns, or bonus domain electives.
-3. Every Module must contain 2-4 Topics.
-4. Every Topic must contain 1-2 Subtopics.
-5. Every Subtopic must contain 1-3 concrete Checklist Items. Each Checklist Item MUST be an actionable learning task with a title and clear description.
+1. Provide between 3 and 5 sequential Modules.
+2. Categorize each Module, Topic, and Subtopic as either "MANDATORY", "RECOMMENDED", or "OPTIONAL".
+3. Every Module must contain 2 Topics.
+4. Every Topic must contain 1 Subtopic.
+5. Every Subtopic must contain 1 to 2 concrete Checklist Items. Each Checklist Item MUST be an actionable learning task with a title and clear description.
 6. Provide resourceTitle (e.g. "Official Docs", "MDN Reference", "Interactive Tutorial") and resourceType ("DOCUMENTATION" | "VIDEO" | "EXERCISE").
 
 Output MUST be strictly valid JSON matching this schema:
@@ -176,17 +174,17 @@ Output MUST be strictly valid JSON matching this schema:
     {
       "title": "Module Title",
       "description": "Module overview",
-      "type": "MANDATORY" | "RECOMMENDED" | "OPTIONAL",
+      "type": "MANDATORY",
       "estimatedHours": 15,
       "topics": [
         {
           "title": "Topic Title",
           "description": "Topic description",
-          "type": "MANDATORY" | "RECOMMENDED" | "OPTIONAL",
+          "type": "MANDATORY",
           "subtopics": [
             {
               "title": "Subtopic Title",
-              "type": "MANDATORY" | "RECOMMENDED" | "OPTIONAL",
+              "type": "MANDATORY",
               "checklistItems": [
                 {
                   "title": "Actionable task",
@@ -210,7 +208,12 @@ Output MUST be strictly valid JSON matching this schema:
     try {
       let dataToParse = raw;
       if (typeof raw === 'string') {
-        const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+        let cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const firstBrace = cleaned.indexOf('{');
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+          cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+        }
         dataToParse = JSON.parse(cleaned);
       }
 
@@ -220,7 +223,7 @@ Output MUST be strictly valid JSON matching this schema:
 
       const result = GeneratedRoadmapSchema.safeParse(dataToParse);
       if (result.success) {
-        return result.data;
+        return result.data as GeneratedRoadmapOutput;
       }
       logger.warn({ errors: result.error.errors }, 'Schema validation failed for AI roadmap');
       return null;
@@ -2106,7 +2109,7 @@ Output MUST be strictly valid JSON matching this schema:
           ],
         },
         {
-          title: `Advanced Topics, Optimization & Interview Preparation`,
+          title: 'Advanced Topics, Optimization & Interview Preparation',
           description: `Industry case studies, performance optimization, portfolio building, and interview readiness for ${targetRole}.`,
           type: NodeType.RECOMMENDED,
           estimatedHours: 20,

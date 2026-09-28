@@ -15,13 +15,13 @@ import { Telemetry } from './telemetry.js';
 
 const response: AIResponse = {
   success: true,
-  provider: 'gemini',
+  provider: 'groq',
   modelAlias: 'REASONING_MODEL',
   data: { roadmap: [] },
   metadata: {
     requestId: 'request-1',
     timestamp: new Date('2026-01-01T00:00:00.000Z'),
-    providerModel: 'gemini-reasoning',
+    providerModel: 'llama-3.3-70b-versatile',
   },
   latencyMs: 1,
   errors: [],
@@ -38,8 +38,8 @@ function executionContext(): AIExecutionContext {
       timestamp: new Date('2026-01-01T00:00:00.000Z'),
     },
     task: new TaskRegistry().get('ROADMAP_GENERATION'),
-    provider: 'gemini',
-    providerModel: 'gemini-reasoning',
+    provider: 'groq',
+    providerModel: 'llama-3.3-70b-versatile',
     modelAlias: 'REASONING_MODEL',
     executionId: 'execution-1',
     startedAt: 10,

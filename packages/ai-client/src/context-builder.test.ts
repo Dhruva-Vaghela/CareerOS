@@ -114,24 +114,24 @@ describe('ContextBuilder', () => {
     const builtRequest = await new ContextBuilder().buildFromProvider(request, sourceProvider);
     const response: AIResponse = {
       success: true,
-      provider: 'gemini',
+      provider: 'groq',
       modelAlias: 'REASONING_MODEL',
       metadata: {
         requestId: request.requestId,
         timestamp: new Date(),
-        providerModel: 'gemini-reasoning',
+        providerModel: 'llama-3.3-70b-versatile',
       },
       latencyMs: 1,
       errors: [],
     };
     const provider = {
-      name: 'gemini' as const,
+      name: 'groq' as const,
       supportsStreaming: false,
       generate: vi.fn().mockResolvedValue(response),
     };
     const factory = {
       getProvider: vi.fn().mockReturnValue(provider),
-      resolveModel: vi.fn().mockReturnValue('gemini-reasoning'),
+      resolveModel: vi.fn().mockReturnValue('llama-3.3-70b-versatile'),
     } as unknown as ProviderFactory;
 
     await new AIOrchestrator(factory).execute(builtRequest);
@@ -146,7 +146,7 @@ describe('ContextBuilder', () => {
     });
     expect(provider.generate).toHaveBeenCalledWith(
       expect.objectContaining({ context: builtRequest.context }),
-      'gemini-reasoning',
+      'llama-3.3-70b-versatile',
       'REASONING_MODEL',
     );
     expect(sourceProvider.get).toHaveBeenCalledTimes(3);

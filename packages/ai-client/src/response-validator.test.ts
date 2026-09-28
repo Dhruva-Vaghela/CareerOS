@@ -4,13 +4,13 @@ import type { AIResponse } from './contracts.js';
 
 const response: AIResponse<string> = {
   success: true,
-  provider: 'gemini',
+  provider: 'groq',
   modelAlias: 'DEFAULT_MODEL',
   data: '{"title":"Backend roadmap"}',
   metadata: {
     requestId: 'request-1',
     timestamp: new Date('2026-01-01T00:00:00.000Z'),
-    providerModel: 'gemini-default',
+    providerModel: 'llama-3.3-70b-versatile',
   },
   latencyMs: 1,
   errors: [],

@@ -2,7 +2,7 @@ import { UnsupportedProviderError } from '@careeros/errors';
 import type { AIProvider } from './ai-provider.js';
 import { loadAIConfig, resolveModelAlias, type AIConfig } from './config.js';
 import type { AIModelAlias } from './contracts.js';
-import { GeminiProvider } from './gemini-provider.js';
+import { GroqProvider } from './groq-provider.js';
 
 export class ProviderFactory {
   private readonly providers: Partial<Record<AIConfig['provider'], AIProvider>>;
@@ -12,7 +12,7 @@ export class ProviderFactory {
     providers: Partial<Record<AIConfig['provider'], AIProvider>> = {},
   ) {
     this.providers = {
-      gemini: new GeminiProvider(config),
+      groq: new GroqProvider(config),
       ...providers,
     };
   }

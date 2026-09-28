@@ -45,25 +45,25 @@ describe('AIOrchestrator', () => {
   it('resolves the task, model alias, and provider through the execution pipeline', async () => {
     const providerResponse: AIResponse<{ title: string }> = {
       success: true,
-      provider: 'gemini',
+      provider: 'groq',
       modelAlias: 'REASONING_MODEL',
       data: { title: 'Backend roadmap' },
       metadata: {
         requestId: request.requestId,
         timestamp: new Date('2026-01-01T00:00:01.000Z'),
-        providerModel: 'gemini-reasoning',
+        providerModel: 'llama-3.3-70b-versatile',
       },
       latencyMs: 4,
       errors: [],
     };
     const provider: AIProvider = {
-      name: 'gemini',
+      name: 'groq',
       supportsStreaming: false,
       generate: vi.fn().mockResolvedValue(providerResponse),
     };
     const factory = {
       getProvider: vi.fn().mockReturnValue(provider),
-      resolveModel: vi.fn().mockReturnValue('gemini-reasoning'),
+      resolveModel: vi.fn().mockReturnValue('llama-3.3-70b-versatile'),
     } as unknown as ProviderFactory;
     const now = vi.fn().mockReturnValueOnce(100).mockReturnValueOnce(145);
     const orchestrator = new AIOrchestrator(factory, new TaskRegistry(), () => 'execution-1', now);
@@ -72,7 +72,7 @@ describe('AIOrchestrator', () => {
 
     expect(factory.getProvider).toHaveBeenCalledOnce();
     expect(factory.resolveModel).toHaveBeenCalledWith('REASONING_MODEL');
-    expect(provider.generate).toHaveBeenCalledWith(request, 'gemini-reasoning', 'REASONING_MODEL');
+    expect(provider.generate).toHaveBeenCalledWith(request, 'llama-3.3-70b-versatile', 'REASONING_MODEL');
     expect(response).toMatchObject({
       success: true,
       data: { title: 'Backend roadmap' },
@@ -83,16 +83,16 @@ describe('AIOrchestrator', () => {
 
   it('returns a provider failure as a structured AIResponse with an execution ID', async () => {
     const provider: AIProvider = {
-      name: 'gemini',
+      name: 'groq',
       supportsStreaming: false,
       generate: vi.fn().mockResolvedValue({
         success: false,
-        provider: 'gemini',
+        provider: 'groq',
         modelAlias: 'REASONING_MODEL',
         metadata: {
           requestId: request.requestId,
           timestamp: new Date('2026-01-01T00:00:01.000Z'),
-          providerModel: 'gemini-reasoning',
+          providerModel: 'llama-3.3-70b-versatile',
         },
         latencyMs: 3,
         errors: [{ code: 'AI_PROVIDER_ERROR', message: 'Provider unavailable' }],
@@ -100,7 +100,7 @@ describe('AIOrchestrator', () => {
     };
     const factory = {
       getProvider: vi.fn().mockReturnValue(provider),
-      resolveModel: vi.fn().mockReturnValue('gemini-reasoning'),
+      resolveModel: vi.fn().mockReturnValue('llama-3.3-70b-versatile'),
     } as unknown as ProviderFactory;
     const orchestrator = new AIOrchestrator(factory, new TaskRegistry(), () => 'execution-2');
 
