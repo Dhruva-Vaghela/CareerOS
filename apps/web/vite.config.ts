@@ -27,6 +27,10 @@ export default defineConfig({
         target: 'http://localhost:3006',
         changeOrigin: true,
       },
+      '/api/v1/interviews': {
+        target: 'http://localhost:3009',
+        changeOrigin: true,
+      },
       '/api/v1/auth': {
         target: 'http://localhost:3001',
         changeOrigin: true,

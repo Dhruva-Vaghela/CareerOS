@@ -428,13 +428,46 @@ export enum InterviewMode {
   COMPANY = 'COMPANY',
 }
 
+export enum InterviewRoundType {
+  TECHNICAL_SCREEN = 'TECHNICAL_SCREEN',
+  CODING_ALGORITHMS = 'CODING_ALGORITHMS',
+  SYSTEM_DESIGN = 'SYSTEM_DESIGN',
+  BEHAVIORAL_LEADERSHIP = 'BEHAVIORAL_LEADERSHIP',
+  DOMAIN_DEEP_DIVE = 'DOMAIN_DEEP_DIVE',
+}
+
+export enum HiringDecision {
+  STRONG_HIRE = 'STRONG_HIRE',
+  HIRE = 'HIRE',
+  LEAN_HIRE = 'LEAN_HIRE',
+  LEAN_NO_HIRE = 'LEAN_NO_HIRE',
+  NO_HIRE = 'NO_HIRE',
+}
+
+export enum InterviewSessionStatus {
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED',
+}
+
 export interface InterviewSession {
   id: string;
   userId: string;
   mode: InterviewMode;
-  contextSnapshot?: string; // JSON snapshot of twin context at practice start
+  status?: InterviewSessionStatus;
+  companyProfileId?: string;
+  companyName?: string;
+  jobRole?: string;
+  experienceLevel?: string;
+  roundType?: string;
+  currentQuestionIndex?: number;
+  totalQuestions?: number;
+  overallScore?: number;
+  contextSnapshot?: string; // JSON snapshot of twin context at practice start (never used in company mode)
   startedAt: Date;
   endedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface InterviewQuestion {
@@ -442,27 +475,60 @@ export interface InterviewQuestion {
   sessionId: string;
   order: number;
   questionText: string;
+  category?: string;
   targetWeakArea?: string;
   difficulty: string;
+  audioUrl?: string;
+  rubricCriteria?: string[];
 }
 
 export interface InterviewResponse {
   id: string;
+  sessionId?: string;
   questionId: string;
   responseTextOrAudioRef: string;
+  audioRef?: string;
+  transcript?: string;
   evaluation?: {
     score: number;
     feedback: string;
+    strengths?: string[];
+    improvements?: string[];
+    technicalAccuracy?: number;
+    communicationClarity?: number;
+    alignmentWithRole?: number;
   };
+  createdAt?: Date;
+}
+
+export interface InterviewQuestionFeedbackItem {
+  questionId?: string;
+  order: number;
+  questionText: string;
+  category?: string;
+  difficulty?: string;
+  userResponse: string;
+  score: number;
+  feedback: string;
+  expectedCriteria: string[];
+  missedCriteria: string[];
+  strengths: string[];
+  technicalAccuracy?: number;
+  communicationClarity?: number;
 }
 
 export interface InterviewFeedback {
   id: string;
   sessionId: string;
   summary: string;
+  overallScore?: number;
+  hiringDecision?: HiringDecision | string;
   strengths: string[];
   weakAreas: string[];
   recommendations: string[];
+  categoryBreakdown?: Record<string, number>;
+  questionsFeedback?: InterviewQuestionFeedbackItem[];
+  createdAt?: Date;
 }
 
 export interface CompanyInterviewProfile {
@@ -472,6 +538,8 @@ export interface CompanyInterviewProfile {
   experienceLevel: string;
   roundType: string;
   referencePatternNotes?: string;
+  competenciesTested?: string[];
+  defaultQuestionsCount?: number;
 }
 
 export interface ReadinessSnapshot {

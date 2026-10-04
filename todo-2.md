@@ -66,7 +66,7 @@ Before working on any module or feature, follow this order strictly:
 - [ ] `services/projects`
 - [ ] `services/assessments`
 - [ ] `services/interview/practice-mode`
-- [ ] `services/interview/company-mode`
+- [x] `services/interview/company-mode`
 - [ ] `services/career-readiness`
 - [ ] `services/recommendation-engine`
 - [ ] `services/productivity`
@@ -429,15 +429,15 @@ Before working on any module or feature, follow this order strictly:
 
 ## Shared
 
-- [ ] Interview session model
-- [ ] Question model
-- [ ] Response model
-- [ ] Feedback model
-- [ ] Structured validation
-- [ ] `interview.completed`
-- [ ] Shared evidence shape
-- [ ] Session persistence
-- [ ] Failure/retry/fallback behavior
+- [x] Interview session model
+- [x] Question model
+- [x] Response model
+- [x] Feedback model
+- [x] Structured validation
+- [x] `interview.completed`
+- [x] Shared evidence shape
+- [x] Session persistence
+- [x] Failure/retry/fallback behavior
 
 ## Practice Mode
 
@@ -452,17 +452,17 @@ Before working on any module or feature, follow this order strictly:
 
 ## Company Mode
 
-- [ ] Company/role/experience/round inputs
-- [ ] No Twin context retrieval
-- [ ] Build-time/lint-level no-Twin dependency check
-- [ ] Question generation
-- [ ] Response evaluation
-- [ ] Final feedback
-- [ ] Tests
+- [x] Company/role/experience/round inputs
+- [x] No Twin context retrieval
+- [x] Build-time/lint-level no-Twin dependency check
+- [x] Question generation
+- [x] Response evaluation
+- [x] Final feedback
+- [x] Tests
 
 **Critical invariant**
 
-- [ ] Company Mode never reads the Digital Twin during the interview.
+- [x] Company Mode never reads the Digital Twin during the interview.
 
 ---
 
@@ -587,7 +587,7 @@ Before working on any module or feature, follow this order strictly:
 - [x] Event contract suite
 - [x] API suite
 - [ ] Browser suite
-- [ ] Company Interview no-Twin invariant
+- [x] Company Interview no-Twin invariant
 - [x] Responsive UI
 - [x] Dark mode
 - [x] Loading states

@@ -8,6 +8,7 @@ import { SidebarLayout } from '../components/SidebarLayout';
 import { DigitalTwinGraph } from '../components/DigitalTwinGraph';
 import { PdfViewerModal } from '../components/PdfViewerModal';
 import { RoadmapView } from '../components/RoadmapView';
+import { CompanyInterviewView } from '../components/CompanyInterviewView';
 import {
   User as UserIcon,
   Briefcase,
@@ -22,6 +23,7 @@ import {
   Activity,
   Terminal,
   Compass,
+  Building2,
 } from 'lucide-react';
 
 interface ResumeData {
@@ -45,8 +47,8 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = (searchParams.get('tab') as 'dashboard' | 'roadmap' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'roadmap' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
+  const tabParam = (searchParams.get('tab') as 'dashboard' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
 
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [goal, setGoal] = useState<GoalData | null>(null);
@@ -62,7 +64,7 @@ export function DashboardPage() {
     }
   }, [tabParam]);
 
-  const handleTabChange = (tab: 'dashboard' | 'roadmap' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
+  const handleTabChange = (tab: 'dashboard' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
     setActiveTab(tab);
     if (tab !== 'profile') {
       setSearchParams({ tab });
@@ -276,9 +278,14 @@ export function DashboardPage() {
                 View your AI-generated curriculum, complete actionable tasks with documentation links, and track skill mastery.
               </p>
             </div>
-            <Button onClick={() => handleTabChange('roadmap')} style={{ width: 'auto' }}>
-              <Compass size={16} style={{ marginRight: '0.4rem' }} /> Open Learning Roadmap
-            </Button>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Button onClick={() => handleTabChange('interview')} variant="secondary" style={{ width: 'auto' }}>
+                <Building2 size={16} style={{ marginRight: '0.4rem' }} /> Company Simulation
+              </Button>
+              <Button onClick={() => handleTabChange('roadmap')} style={{ width: 'auto' }}>
+                <Compass size={16} style={{ marginRight: '0.4rem' }} /> Open Learning Roadmap
+              </Button>
+            </div>
           </div>
         )}
 
@@ -286,6 +293,13 @@ export function DashboardPage() {
         {activeTab === 'roadmap' && (
           <div className="animate-reveal stagger-1">
             <RoadmapView />
+          </div>
+        )}
+
+        {/* Tab: Company Mock Interview View */}
+        {activeTab === 'interview' && (
+          <div className="animate-reveal stagger-1">
+            <CompanyInterviewView />
           </div>
         )}
 

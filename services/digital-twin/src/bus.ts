@@ -5,6 +5,7 @@ import {
   GoalChangedEvent,
   GoalCreatedEvent,
   PreferencesUpdatedEvent,
+  InterviewCompletedEvent,
   TwinNodeType,
   VerificationStatus,
   ConfidenceLevel,
@@ -101,6 +102,29 @@ export function setupEventSubscriptions(): EventBus {
         });
       } catch (err) {
         logger.error({ err }, 'Error processing preferences.updated in Digital Twin');
+      }
+    });
+
+    // 5. Subscribe to interview.completed (Post-interview writeback)
+    busInstance.subscribe<InterviewCompletedEvent>('interview.completed', async (event) => {
+      try {
+        const { userId, sessionId, mode, score } = event.payload;
+        logger.info({ userId, sessionId, mode, score }, 'Digital Twin handling interview.completed event');
+
+        await twinService.upsertNode(userId, {
+          nodeType: TwinNodeType.INTERVIEW,
+          source: 'INTERVIEW_SERVICE',
+          verificationStatus: VerificationStatus.VERIFIED,
+          confidenceScore: ConfidenceLevel.HIGH,
+          metadata: {
+            sessionId,
+            mode,
+            score,
+            completedAt: new Date().toISOString(),
+          },
+        });
+      } catch (err) {
+        logger.error({ err }, 'Error processing interview.completed in Digital Twin');
       }
     });
   }

@@ -1,14 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from 'express';
-import { UnauthorizedError } from '@careeros/errors';
 import jwt from 'jsonwebtoken';
-import { createLogger } from '@careeros/logger';
+import { UnauthorizedError } from '@careeros/errors';
 import { config } from '../config.js';
-
-const logger = createLogger('profile-auth-middleware');
-
-interface TokenPayload {
-  userId: string;
-}
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -16,23 +9,19 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-// Intentionally duplicated from auth service to avoid cross-service imports
-// per CLAUDE.md §3 (loose coupling) and §5 (no direct imports across service boundaries).
-// Uses the same JWT_SECRET so tokens issued by auth are valid here.
-
 export function parseAuth(): RequestHandler {
   return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        const decoded = jwt.verify(token, config.JWT_SECRET) as { userId?: string; sub?: string; id?: string };
-        const id = decoded.userId || decoded.sub || decoded.id;
+        const decoded = jwt.verify(token, config.JWT_SECRET) as { userId?: string; sub?: string };
+        const id = decoded.userId || decoded.sub;
         if (id) {
           req.user = { id };
         }
-      } catch (_error) {
-        // Invalid or expired access token: do not populate req.user
+      } catch (_err) {
+        // Invalid token
       }
     }
     next();
@@ -41,7 +30,7 @@ export function parseAuth(): RequestHandler {
 
 export function requireAuth(): RequestHandler {
   return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
-    if (!req.user) {
+    if (!req.user || !req.user.id) {
       next(new UnauthorizedError('Missing or invalid authentication credentials'));
       return;
     }
