@@ -18,6 +18,13 @@ const PROMPT_DEFINITIONS: readonly PromptDefinition[] = [
     metadata: { status: 'placeholder' },
   },
   {
+    id: 'ASSESSMENT_GENERATION',
+    version: 'v1',
+    templateFile: 'assessment-generation/v1.txt',
+    variables: ['taskId', 'context', 'input'],
+    metadata: { status: 'active' },
+  },
+  {
     id: 'CAREER_CHATBOT',
     version: 'v1',
     templateFile: 'career-chatbot/v1.txt',

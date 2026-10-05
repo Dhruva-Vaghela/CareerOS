@@ -658,8 +658,25 @@ export type AssessmentScoredEvent = BaseEvent<{
   userId: string;
   assessmentId: string;
   attemptId: string;
+  careerDomainId?: string;
+  assessmentType: AssessmentType;
   score: number;
-  type: AssessmentType;
+  percentage: number;
+  totalMarks: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  unansweredQuestions: number;
+  skills: Array<{
+    skillId: string;
+    skillName: string;
+    questionsAttempted: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    unansweredQuestions: number;
+    score: number;
+    percentage: number;
+  }>;
+  scoredAt: string;
 }>;
 
 export type InterviewCompletedEvent = BaseEvent<{

@@ -4,6 +4,7 @@ import type { AIModelAlias } from './contracts.js';
 
 export const AI_TASK_IDS = [
   'ROADMAP_GENERATION',
+  'ASSESSMENT_GENERATION',
   'CAREER_CHATBOT',
   'MOCK_INTERVIEW',
   'PROJECT_REVIEW',
@@ -40,6 +41,15 @@ const TASK_DEFINITIONS: readonly AITaskDefinition[] = [
     promptTemplateName: 'roadmap-generation',
     requiredContext: ['profile', 'careerGoal', 'digitalTwin'],
     digitalTwinPartitions: ['skillState', 'evidenceState'],
+    responseSchema: PLACEHOLDER_RESPONSE_SCHEMA,
+    retryStrategy: NO_RETRY,
+  },
+  {
+    id: 'ASSESSMENT_GENERATION',
+    description: 'Generate roadmap-grounded quiz and module assessment questions.',
+    modelAlias: 'REASONING_MODEL',
+    promptTemplateName: 'assessment-generation',
+    requiredContext: ['careerGoal', 'learning'],
     responseSchema: PLACEHOLDER_RESPONSE_SCHEMA,
     retryStrategy: NO_RETRY,
   },

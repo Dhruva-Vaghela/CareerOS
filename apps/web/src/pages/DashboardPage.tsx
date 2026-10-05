@@ -9,6 +9,7 @@ import { DigitalTwinGraph } from '../components/DigitalTwinGraph';
 import { PdfViewerModal } from '../components/PdfViewerModal';
 import { RoadmapView } from '../components/RoadmapView';
 import { CompanyInterviewView } from '../components/CompanyInterviewView';
+import { RoadmapAssessmentExperience } from '../components/RoadmapAssessmentExperience';
 import {
   User as UserIcon,
   Briefcase,
@@ -47,8 +48,8 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = (searchParams.get('tab') as 'dashboard' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
+  const tabParam = (searchParams.get('tab') as 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
 
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [goal, setGoal] = useState<GoalData | null>(null);
@@ -64,7 +65,7 @@ export function DashboardPage() {
     }
   }, [tabParam]);
 
-  const handleTabChange = (tab: 'dashboard' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
+  const handleTabChange = (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
     setActiveTab(tab);
     if (tab !== 'profile') {
       setSearchParams({ tab });
@@ -171,6 +172,10 @@ export function DashboardPage() {
       <div style={{ maxWidth: '1140px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {error && <Alert type="error" message={error} />}
 
+        {activeTab === 'assessment' && (
+          <RoadmapAssessmentExperience />
+        )}
+
         {/* Technical Header Banner */}
         <div
           className="cockpit-panel animate-reveal"
@@ -223,7 +228,9 @@ export function DashboardPage() {
                 </span>
               </div>
               <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
-                {activeTab === 'digital-twin'
+                {activeTab === 'assessment'
+                  ? 'Assessment Studio'
+                  : activeTab === 'digital-twin'
                   ? 'Career Digital Twin Engine'
                   : activeTab === 'roadmap'
                   ? 'Personalized AI Roadmap'

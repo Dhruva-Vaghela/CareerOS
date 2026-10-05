@@ -8,7 +8,8 @@
     { "path": "./packages/database" },
     { "path": "./packages/event-bus" },
     { "path": "./packages/ai-client" },
-    { "path": "./services/health-check" },
-    { "path": "./services/interview" }
+    { "path": "./services/assessment" },
+  { "path": "./services/health-check" },
+  { "path": "./services/interview" }
   ]
 }
