@@ -676,6 +676,16 @@ export type AssessmentScoredEvent = BaseEvent<{
     score: number;
     percentage: number;
   }>;
+  topics: Array<{
+    topicId: string;
+    topicName: string;
+    questionsAttempted: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    unansweredQuestions: number;
+    score: number;
+    percentage: number;
+  }>;
   scoredAt: string;
 }>;
 

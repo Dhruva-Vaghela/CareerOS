@@ -647,16 +647,16 @@ Provides the graded checkpoints that gate roadmap progression and supply the str
 - **Depended on by:** Learning Progress Tracking, Career Digital Twin, Career Readiness Engine.
 
 ### 13.5 Domain Model
-- `Assessment` (id, module_id, type[quiz|module_assessment], questions[])
-- `AssessmentAttempt` (id, user_id, assessment_id, answers_json, score, completed_at)
+- `Assessment` (id, roadmap_id, module_id, type[quiz|module_assessment], questions[]); each question is mapped to its roadmap topic and skill.
+- `AssessmentAttempt` (id, user_id, assessment_id, answers_json, score, question_results[], topic_performance[], skill_performance[], completed_at)
 
 ### 13.6 Data Flow
 - **Input:** roadmap-triggered assessment request, user answers.
-- **Output:** score, per-question breakdown.
+- **Output:** overall score, per-question breakdown, and aggregate performance by roadmap topic and skill.
 - **Ownership:** sole owner of attempt/score records.
 
 ### 13.7 Event Flow
-- Publishes: `assessment.scored`.
+- Publishes: `assessment.scored` with overall, per-topic, and per-skill scoring summaries; consumers must not need cross-module database reads to interpret the result.
 - Subscribes: `roadmap.node.completed` (module-completion trigger).
 
 ### 13.8 AI Interaction
@@ -992,7 +992,7 @@ Not implemented in MVP. Documented boundary: this module will eventually provide
 | `study_session.logged` | Study Planner | Career Digital Twin, Productivity (optional) |
 | `skill.updated` | Skill Tracking | AI Roadmap Engine, Career Readiness Engine, Career Digital Twin |
 | `project.submitted` | Projects | Learning Progress Tracking (future) |
-| `assessment.scored` | Assessments & Quizzes | Learning Progress Tracking, Skill Tracking, AI Roadmap Engine |
+| `assessment.scored` (overall, per-topic, and per-skill scoring summaries) | Assessments & Quizzes | Learning Progress Tracking, Skill Tracking, AI Roadmap Engine |
 | `interview.completed` (mode=practice\|company) | AI Mock Interview System | Learning Progress Tracking, Career Readiness Engine, Career Digital Twin, Recommendation Engine |
 | `readiness.updated` | Career Readiness Engine | Career Digital Twin, Recommendation Engine |
 | `recommendation.generated` | Recommendation Engine | Productivity (optional) |

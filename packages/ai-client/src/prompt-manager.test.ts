@@ -18,6 +18,7 @@ describe('PromptRegistry', () => {
   it('registers a placeholder prompt for every AI task', () => {
     expect(new PromptRegistry().list().map((definition) => definition.id)).toEqual([
       'ROADMAP_GENERATION',
+      'ASSESSMENT_GENERATION',
       'CAREER_CHATBOT',
       'MOCK_INTERVIEW',
       'PROJECT_REVIEW',

@@ -20,6 +20,7 @@ describe('TaskRegistry', () => {
 
     expect(tasks.map((task) => task.id)).toEqual([
       'ROADMAP_GENERATION',
+      'ASSESSMENT_GENERATION',
       'CAREER_CHATBOT',
       'MOCK_INTERVIEW',
       'PROJECT_REVIEW',
