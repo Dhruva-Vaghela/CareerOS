@@ -63,7 +63,7 @@ Before working on any module or feature, follow this order strictly:
 - [ ] `services/progress-engine`
 - [ ] `services/study-planner`
 - [ ] `services/skill-tracking`
-- [ ] `services/projects`
+- [x] `services/projects`
 - [ ] `services/assessments`
 - [ ] `services/interview/practice-mode`
 - [x] `services/interview/company-mode`
@@ -318,27 +318,27 @@ Before working on any module or feature, follow this order strictly:
 
 # 9. Projects
 
-- [ ] Project domain model
-- [ ] Project-to-roadmap mapping
-- [ ] Submission model
-- [ ] Project status lifecycle
-- [ ] Project history
-- [ ] `project.submitted`
-- [ ] Non-verified evidence handling
-- [ ] Project APIs
-- [ ] Project dashboard
-- [ ] Suggested projects
-- [ ] Project details
-- [ ] Submission form
-- [ ] Submission history
-- [ ] Validation tests
-- [ ] Ownership tests
-- [ ] Event tests
+- [x] Project domain model
+- [x] Project-to-roadmap mapping
+- [x] Submission model
+- [x] Project status lifecycle
+- [x] Project history
+- [x] `project.submitted`
+- [x] Non-verified evidence handling
+- [x] Project APIs
+- [x] Project dashboard
+- [x] Suggested projects
+- [x] Project details
+- [x] Submission form
+- [x] Submission history
+- [x] Validation tests
+- [x] Ownership tests
+- [x] Event tests
 - [ ] Browser tests
 
 **MVP guardrail**
 
-- [ ] Do NOT implement AI project evaluation.
+- [x] Do NOT implement AI project evaluation.
 
 ---
 

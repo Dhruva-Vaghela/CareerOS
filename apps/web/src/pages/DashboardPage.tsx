@@ -11,6 +11,7 @@ import { RoadmapView } from '../components/RoadmapView';
 import { CompanyInterviewView } from '../components/CompanyInterviewView';
 import { RoadmapAssessmentExperience } from '../components/RoadmapAssessmentExperience';
 import { SkillTrackingView } from '../components/SkillTrackingView';
+import { ProjectIntelligenceView } from '../components/ProjectIntelligenceView';
 import {
   User as UserIcon,
   Briefcase,
@@ -26,6 +27,7 @@ import {
   Terminal,
   Compass,
   Building2,
+  FolderGit2,
 } from 'lucide-react';
 
 interface ResumeData {
@@ -49,8 +51,8 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = (searchParams.get('tab') as 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking') || 'dashboard';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'profile'>(tabParam);
+  const tabParam = (searchParams.get('tab') as 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'projects') || 'dashboard';
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'projects' | 'profile'>(tabParam);
 
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [goal, setGoal] = useState<GoalData | null>(null);
@@ -66,7 +68,7 @@ export function DashboardPage() {
     }
   }, [tabParam]);
 
-  const handleTabChange = (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'profile') => {
+  const handleTabChange = (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'projects' | 'profile') => {
     setActiveTab(tab);
     if (tab !== 'profile') {
       setSearchParams({ tab });
@@ -239,12 +241,16 @@ export function DashboardPage() {
                   ? 'Resume Foundation Center'
                   : activeTab === 'career-goals'
                   ? 'Career Goals & Timeline'
+                  : activeTab === 'projects'
+                  ? 'Project Intelligence'
                   : activeTab === 'skill-tracking'
                   ? 'Skill Tracking'
                   : 'Interview Command Center'}
               </h1>
               <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                {activeTab === 'skill-tracking'
+                {activeTab === 'projects'
+                  ? <>GitHub repository synchronization & portfolio intelligence for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>
+                  : activeTab === 'skill-tracking'
                   ? <>Assessment results and roadmap activity for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>
                   : <>Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>}
               </p>
@@ -259,6 +265,13 @@ export function DashboardPage() {
         </div>
 
         {activeTab === 'skill-tracking' && <SkillTrackingView accessToken={accessToken} />}
+
+        {/* Tab: Project Intelligence View */}
+        {activeTab === 'projects' && (
+          <div className="animate-reveal stagger-1">
+            <ProjectIntelligenceView />
+          </div>
+        )}
 
         {/* AI Learning Roadmap CTA Banner (Visible on Dashboard Overview) */}
         {activeTab === 'dashboard' && (
@@ -292,7 +305,10 @@ export function DashboardPage() {
                 View your AI-generated curriculum, complete actionable tasks with documentation links, and track skill mastery.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <Button onClick={() => handleTabChange('projects')} variant="secondary" style={{ width: 'auto' }}>
+                <FolderGit2 size={16} style={{ marginRight: '0.4rem' }} /> Project Intelligence
+              </Button>
               <Button onClick={() => handleTabChange('interview')} variant="secondary" style={{ width: 'auto' }}>
                 <Building2 size={16} style={{ marginRight: '0.4rem' }} /> Company Simulation
               </Button>

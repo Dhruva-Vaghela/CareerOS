@@ -716,3 +716,32 @@ export type TwinNodeUpdatedEvent = BaseEvent<{
   node: TwinNode;
 }>;
 
+export interface ProjectIntelligenceItem {
+  id: string;
+  userId: string;
+  githubRepoId?: number;
+  name: string;
+  fullName?: string;
+  description?: string | null;
+  repositoryUrl: string;
+  language?: string | null;
+  topics?: string[];
+  stars?: number;
+  forks?: number;
+  status: 'Completed' | 'In Progress' | 'Active' | 'Archived';
+  isPublic: boolean;
+  defaultBranch?: string;
+  lastSyncedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ProjectSubmittedEvent = BaseEvent<{
+  userId: string;
+  projectId?: string;
+  projectBriefId?: string;
+  title: string;
+  submissionUrl: string;
+  status: ProjectStatus;
+  submittedAt: string;
+}>;

@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { OnboardingPage } from './pages/onboarding/OnboardingPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
+import { GithubCallbackPage } from './pages/GithubCallbackPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -135,6 +136,8 @@ function App() {
                 <EditProfilePage />
               </ProtectedRoute>
             } />
+
+            <Route path="/auth/github/callback" element={<GithubCallbackPage />} />
           </Routes>
         </Router>
       </ProfileProvider>
