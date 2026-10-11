@@ -9,6 +9,7 @@ import {
   getScorePointDateLabels,
   getScoreHistoryGroups,
   getSkillImprovements,
+  getSkillImprovementEmptyMessage,
   getSkillTrackingAttemptNumbers,
 } from './SkillTrackingView';
 
@@ -132,9 +133,11 @@ describe('Skill Tracking chart inputs', () => {
     };
 
     expect(getScorePointDateLabels(point).detail).toBe('Attempt 2');
+    expect(getScorePointDateLabels(point).date).toContain('2026');
     expect(getScorePointAccessibleLabel(point)).toContain('attempt 2');
     expect(getScorePointAccessibleLabel(point)).toContain('78 percent');
     expect(getScorePointAccessibleLabel(point)).toContain('Algorithms quiz');
+    expect(getScorePointAccessibleLabel(point)).toContain('2026');
   });
 
   it('keeps long radar axis labels compact while preserving short labels', () => {
@@ -213,29 +216,75 @@ describe('Skill Tracking chart inputs', () => {
     expect(canRenderRadarChart(getRadarChartSkills(threeSkills))).toBe(true);
   });
 
-  it('calculates percentage-point change only for the same submitted assessment and skill', () => {
+  it('compares regenerated assessment IDs with matching complete quiz identity by timestamp', () => {
     const previous = attempt({
-      _id: 'previous', status: 'SUBMITTED', assessmentId: 'same-assessment',
-      submittedAt: '2026-04-01T10:00:00Z', skillPerformance: [{ skillId: 'algorithms', skillName: 'Algorithms', percentage: 54 }],
+      _id: 'previous', status: 'SUBMITTED', assessmentId: 'generated-1',
+      submittedAt: '2026-04-01T10:00:00Z', skillPerformance: [{ skillId: 'skill-algorithms', skillName: 'Algorithms', percentage: 60 }],
     });
     const latest = attempt({
-      _id: 'latest', status: 'SUBMITTED', assessmentId: 'same-assessment',
-      submittedAt: '2026-04-02T10:00:00Z', skillPerformance: [{ skillId: 'algorithms', skillName: 'Algorithms', percentage: 71 }],
+      _id: 'latest', status: 'SUBMITTED', assessmentId: 'generated-2',
+      submittedAt: '2026-04-02T10:00:00Z', skillPerformance: [{ skillId: 'skill-algorithms', skillName: 'Algorithms', percentage: 80 }],
     });
-    const regenerated = attempt({
-      _id: 'different-assessment', status: 'SUBMITTED', assessmentId: 'regenerated',
-      submittedAt: '2026-04-03T10:00:00Z', skillPerformance: [{ skillId: 'algorithms', percentage: 95 }],
-    });
-    const unfinished = attempt({
-      _id: 'unfinished', status: 'IN_PROGRESS', assessmentId: 'same-assessment',
-      submittedAt: undefined, skillPerformance: [{ skillId: 'algorithms', percentage: 100 }],
-    });
+    const assessments = { 'generated-1': metadata, 'generated-2': { ...metadata } };
 
-    const improvements = getSkillImprovements([latest, regenerated, unfinished, previous], { 'same-assessment': 'Same quiz' });
+    const improvements = getSkillImprovements([latest, previous], { 'generated-2': 'Design Patterns Quiz' }, assessments);
     expect(improvements).toHaveLength(1);
     expect(improvements[0]).toMatchObject({
-      assessmentId: 'same-assessment', skillId: 'algorithms', earlierScore: 54, laterScore: 71, changePoints: 17,
+      assessmentId: 'generated-2', skillId: 'skill-algorithms', earlierScore: 60, laterScore: 80,
+      changePoints: 20, comparisonLabel: 'Same verified quiz identity',
     });
+  });
+
+  it('calculates a negative percentage-point change using chronological order, not input order', () => {
+    const earlierHigh = attempt({
+      _id: 'earlier-high', assessmentId: 'generated-1', submittedAt: '2026-04-01T10:00:00Z',
+      skillPerformance: [{ skillId: 'skill-algorithms', percentage: 80 }],
+    });
+    const laterLow = attempt({
+      _id: 'later-low', assessmentId: 'generated-2', submittedAt: '2026-04-02T10:00:00Z',
+      skillPerformance: [{ skillId: 'skill-algorithms', percentage: 60 }],
+    });
+
+    expect(getSkillImprovements([laterLow, earlierHigh], {}, {
+      'generated-1': metadata, 'generated-2': metadata,
+    })[0]).toMatchObject({ earlierScore: 80, laterScore: 60, changePoints: -20 });
+  });
+
+  it('does not compare different skill IDs, even when skill names are similar', () => {
+    const one = attempt({ _id: 'one', assessmentId: 'generated-1', submittedAt: '2026-04-01T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', skillName: 'Design Patterns', percentage: 60 }] });
+    const two = attempt({ _id: 'two', assessmentId: 'generated-2', submittedAt: '2026-04-02T10:00:00Z', skillPerformance: [{ skillId: 'skill-b', skillName: 'Design Patterns', percentage: 80 }] });
+    expect(getSkillImprovements([one, two], {}, { 'generated-1': metadata, 'generated-2': metadata })).toEqual([]);
+  });
+
+  it('does not compare regenerated records when any logical identity field differs', () => {
+    const one = attempt({ _id: 'one', assessmentId: 'generated-1', submittedAt: '2026-04-01T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 60 }] });
+    const two = attempt({ _id: 'two', assessmentId: 'generated-2', submittedAt: '2026-04-02T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 80 }] });
+    const assessments = {
+      'generated-1': metadata, 'generated-2': { ...metadata, topicId: 'different-topic' },
+    };
+    expect(getSkillImprovements([one, two], {}, assessments)).toEqual([]);
+    expect(getSkillImprovementEmptyMessage([one, two], assessments)).toContain('topic ID do not match');
+  });
+
+  it('preserves exact-record matching when regenerated quiz metadata is incomplete', () => {
+    const one = attempt({ _id: 'one', assessmentId: 'same-id', submittedAt: '2026-04-01T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 60 }] });
+    const two = attempt({ _id: 'two', assessmentId: 'same-id', submittedAt: '2026-04-02T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 80 }] });
+    const regenerated = attempt({ _id: 'three', assessmentId: 'new-id', submittedAt: '2026-04-03T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 95 }] });
+    expect(getSkillImprovements([one, two, regenerated], {}, { 'same-id': { ...metadata, type: undefined } })).toHaveLength(1);
+    const assessments = { 'same-id': { ...metadata, type: undefined } };
+    expect(getSkillImprovements([one, regenerated], {}, assessments)).toEqual([]);
+    expect(getSkillImprovementEmptyMessage([one, regenerated], assessments)).toContain('assessment type');
+  });
+
+  it('excludes undated and unfinished attempts from comparisons', () => {
+    const submitted = attempt({ _id: 'submitted', assessmentId: 'generated-1', submittedAt: '2026-04-01T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 60 }] });
+    const undated = attempt({ _id: 'undated', assessmentId: 'generated-2', submittedAt: undefined, skillPerformance: [{ skillId: 'skill-a', percentage: 80 }] });
+    const unfinished = attempt({ _id: 'unfinished', assessmentId: 'generated-3', status: 'IN_PROGRESS', submittedAt: '2026-04-03T10:00:00Z', skillPerformance: [{ skillId: 'skill-a', percentage: 90 }] });
+    const assessments = {
+      'generated-1': metadata, 'generated-2': metadata, 'generated-3': metadata,
+    };
+    expect(getSkillImprovements([submitted, undated, unfinished], {}, assessments)).toEqual([]);
+    expect(getSkillImprovementEmptyMessage([submitted, undated, unfinished], assessments)).toContain('no reliable submission date');
   });
 
   it('returns no improvement or comparison when the required evidence is insufficient', () => {

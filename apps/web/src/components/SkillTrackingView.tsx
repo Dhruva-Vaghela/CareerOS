@@ -58,6 +58,7 @@ export interface SkillImprovement {
   skillName: string;
   assessmentId: string;
   assessmentTitle: string;
+  comparisonLabel: string;
   earlierScore: number;
   laterScore: number;
   changePoints: number;
@@ -68,7 +69,7 @@ export interface SkillImprovement {
 export function getScorePointDateLabels(point: ScoreHistoryPoint): { date: string; detail: string } {
   const submittedAt = new Date(point.submittedAt);
   return {
-    date: submittedAt.toLocaleDateString(),
+    date: submittedAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
     detail: point.attemptNumber === undefined ? submittedAt.toLocaleTimeString() : `Attempt ${point.attemptNumber}`,
   };
 }
@@ -180,6 +181,7 @@ export function canRenderRadarChart(skills: SkillPerformance[]): boolean {
 export function getSkillImprovements(
   attempts: AssessmentAttempt[],
   titlesById: Record<string, string>,
+  assessmentsById: Record<string, AssessmentQuizMetadata> = {},
 ): SkillImprovement[] {
   const comparisons = new Map<string, Array<{
     attempt: AssessmentAttempt;
@@ -194,7 +196,11 @@ export function getSkillImprovements(
     for (const result of attempt.skillPerformance ?? []) {
       if (!result.skillId || typeof result.percentage !== 'number'
         || !Number.isFinite(result.percentage) || result.percentage < 0 || result.percentage > 100) continue;
-      const key = JSON.stringify([attempt.assessmentId, result.skillId]);
+      // Assessment generation creates a new assessmentId each time. Compare regenerated
+      // records only when the complete, stable quiz identity matches; otherwise retain
+      // the safer exact-record grouping. Skill IDs always need an exact match.
+      const quizKey = getLogicalQuizKey(attempt.assessmentId, assessmentsById[attempt.assessmentId]);
+      const key = JSON.stringify([quizKey, result.skillId]);
       const entries = comparisons.get(key) ?? [];
       if (entries.some((entry) => entry.attempt._id === attempt._id)) continue;
       entries.push({ attempt, score: result.percentage, skillName: result.skillName || result.skillId, timestamp });
@@ -205,18 +211,21 @@ export function getSkillImprovements(
   const improvements: SkillImprovement[] = [];
   for (const [key, entries] of comparisons) {
     if (entries.length < 2) continue;
-    const [assessmentId, skillId] = JSON.parse(key) as [string, string];
+    const [, skillId] = JSON.parse(key) as [string, string];
     entries.sort((left, right) => left.timestamp - right.timestamp
       || (left.attempt.attemptNumber ?? Number.MAX_SAFE_INTEGER) - (right.attempt.attemptNumber ?? Number.MAX_SAFE_INTEGER)
       || left.attempt._id.localeCompare(right.attempt._id));
     const earlier = entries.at(-2)!;
     const later = entries.at(-1)!;
+    const assessmentId = later.attempt.assessmentId;
+    const sameAssessmentRecord = earlier.attempt.assessmentId === later.attempt.assessmentId;
     improvements.push({
       key,
       skillId,
       skillName: later.skillName,
       assessmentId,
       assessmentTitle: titlesById[assessmentId] || 'Assessment attempt',
+      comparisonLabel: sameAssessmentRecord ? 'Same assessment record' : 'Same verified quiz identity',
       earlierScore: earlier.score,
       laterScore: later.score,
       changePoints: later.score - earlier.score,
@@ -226,6 +235,57 @@ export function getSkillImprovements(
   }
   return improvements.sort((left, right) => left.assessmentTitle.localeCompare(right.assessmentTitle)
     || left.skillName.localeCompare(right.skillName));
+}
+
+export function getSkillImprovementEmptyMessage(
+  attempts: AssessmentAttempt[],
+  assessmentsById: Record<string, AssessmentQuizMetadata>,
+): string {
+  const evidence = attempts
+    .filter((attempt) => attempt.status === 'SUBMITTED')
+    .flatMap((attempt) => (attempt.skillPerformance ?? [])
+      .filter((result) => result.skillId && typeof result.percentage === 'number'
+        && Number.isFinite(result.percentage) && result.percentage >= 0 && result.percentage <= 100)
+      .map((result) => ({ attempt, skillId: result.skillId })));
+
+  for (let leftIndex = 0; leftIndex < evidence.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < evidence.length; rightIndex += 1) {
+      const left = evidence[leftIndex];
+      const right = evidence[rightIndex];
+      if (left.skillId !== right.skillId) continue;
+      if (getValidTimestamp(left.attempt.submittedAt) === undefined
+        || getValidTimestamp(right.attempt.submittedAt) === undefined) {
+        return `A repeated result for skill ID ${left.skillId} has no reliable submission date, so it cannot be compared.`;
+      }
+      if (left.attempt.assessmentId === right.attempt.assessmentId) continue;
+
+      const leftMetadata = assessmentsById[left.attempt.assessmentId];
+      const rightMetadata = assessmentsById[right.attempt.assessmentId];
+      const fields = [
+        ['roadmap ID', 'roadmapId'],
+        ['roadmap version', 'roadmapVersion'],
+        ['module ID', 'moduleId'],
+        ['topic ID', 'topicId'],
+        ['assessment type', 'type'],
+      ] as const;
+      const isPresent = (metadata: AssessmentQuizMetadata | undefined, key: typeof fields[number][1]) =>
+        key === 'roadmapVersion'
+          ? typeof metadata?.roadmapVersion === 'number' && Number.isFinite(metadata.roadmapVersion)
+          : typeof metadata?.[key] === 'string' && (metadata[key] as string).length > 0;
+      const missing = fields.filter(([, key]) => !isPresent(leftMetadata, key) || !isPresent(rightMetadata, key)).map(([label]) => label);
+      if (missing.length) {
+        return `These regenerated assessments cannot be matched because metadata is missing for: ${missing.join(', ')}.`;
+      }
+      const mismatched = fields.filter(([, key]) => leftMetadata?.[key] !== rightMetadata?.[key]).map(([label]) => label);
+      if (mismatched.length) {
+        return `These results were not compared because their ${mismatched.join(', ')} do not match.`;
+      }
+    }
+  }
+
+  return evidence.length < 2
+    ? 'At least two submitted, dated skill results are needed. Unfinished attempts do not count.'
+    : 'No exact skill ID appears in multiple eligible submitted results. Skill names alone are not used to match results.';
 }
 
 const hasCompleteQuizIdentity = (metadata?: AssessmentQuizMetadata): metadata is Required<AssessmentQuizMetadata> =>
@@ -369,12 +429,12 @@ function ScoreTrendChart({ points }: { points: ScoreHistoryPoint[] }) {
     return <p style={{ ...chartMutedStyle, margin: 0 }}>No submitted scores with reliable submission dates are available for this quiz.</p>;
   }
 
-  const width = 640;
-  const height = 270;
-  const left = 42;
-  const right = 18;
-  const top = 16;
-  const bottom = 48;
+  const width = 760;
+  const height = 300;
+  const left = 48;
+  const right = 24;
+  const top = 20;
+  const bottom = 56;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const labelStride = Math.max(1, Math.ceil(points.length / 8));
@@ -390,11 +450,12 @@ function ScoreTrendChart({ points }: { points: ScoreHistoryPoint[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Submitted assessment score history, shown as percentages over submission dates" style={{ display: 'block', width: '100%', overflow: 'visible' }}>
       <title>Submitted score history</title>
       <desc>Only submitted assessment scores with valid submission dates are plotted. The vertical scale is percentage from zero to one hundred.</desc>
+      <style>{`.score-history-point:focus-visible { outline: none; stroke: var(--color-text-primary); stroke-width: 4px; }`}</style>
       {[0, 25, 50, 75, 100].map((tick) => {
         const y = top + (1 - tick / 100) * plotHeight;
         return <g key={tick}>
           <line x1={left} x2={width - right} y1={y} y2={y} stroke="var(--color-border-subtle)" />
-          <text x={left - 8} y={y + 4} textAnchor="end" fontSize="11" fill="var(--color-text-muted)">{tick}%</text>
+          <text x={left - 8} y={y + 4} textAnchor="end" fontSize="11" fill="var(--color-text-secondary)">{tick}%</text>
         </g>;
       })}
       <path d={area} fill="var(--color-primary)" opacity="0.09" />
@@ -404,6 +465,7 @@ function ScoreTrendChart({ points }: { points: ScoreHistoryPoint[] }) {
           cx={x}
           cy={y}
           r="5"
+          className="score-history-point"
           fill="var(--color-primary)"
           stroke="var(--color-surface)"
           strokeWidth="2"
@@ -413,15 +475,15 @@ function ScoreTrendChart({ points }: { points: ScoreHistoryPoint[] }) {
         >
           <title>{getScorePointAccessibleLabel(point)}</title>
         </circle>
-        {(index % labelStride === 0 || index === points.length - 1) && <text x={x} y={top + plotHeight + 14} textAnchor="middle" fontSize="10" fill="var(--color-text-muted)">
+        {(index % labelStride === 0 || index === points.length - 1) && <text x={x} y={top + plotHeight + 15} textAnchor={index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'} fontSize="11" fill="var(--color-text-secondary)">
           <tspan x={x} dy="0">{getScorePointDateLabels(point).date}</tspan>
-          <tspan x={x} dy="12">{getScorePointDateLabels(point).detail}</tspan>
+          <tspan x={x} dy="13" fill="var(--color-primary)" fontWeight="600">{getScorePointDateLabels(point).detail}</tspan>
         </text>}
       </g>)}
     </svg>
-    <div aria-label="Plotted score results" style={{ display: 'grid', gap: '0.35rem', marginTop: '0.5rem' }}>
+    <div aria-label="Plotted score results" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0.45rem 1rem', marginTop: '0.65rem', paddingTop: '0.65rem', borderTop: '1px solid var(--color-border-subtle)' }}>
       {points.map((point) => <div key={point.attemptId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-        <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{point.attemptNumber === undefined ? 'Attempt number unavailable' : `Attempt ${point.attemptNumber}`} · {point.title} · {new Date(point.submittedAt).toLocaleString()}</span>
+        <span title={getScorePointAccessibleLabel(point)} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{point.attemptNumber === undefined ? 'Attempt number unavailable' : `Attempt ${point.attemptNumber}`} · {point.title} · {new Date(point.submittedAt).toLocaleString()}</span>
         <strong style={{ color: 'var(--color-primary)', whiteSpace: 'nowrap' }}>{point.score}%</strong>
       </div>)}
     </div>
@@ -460,6 +522,7 @@ function SkillRadarChart({ skills }: { skills: SkillPerformance[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Radar chart comparing skill score percentages within one submitted assessment attempt" style={{ display: 'block', width: '100%', maxHeight: '330px' }}>
       <title>Skill scores in this assessment attempt</title>
       <desc>Each axis shows one skill percentage from this attempt on a zero to one hundred scale.</desc>
+      <style>{`.skill-radar-point:focus-visible { outline: none; stroke: var(--color-text-primary); stroke-width: 4px; }`}</style>
       {[0.25, 0.5, 0.75, 1].map((scale) => <polygon key={scale} points={axisPolygon(scale)} fill="none" stroke="var(--color-border)" strokeWidth="1" />)}
       {validSkills.map((skill, index) => {
         const point = pointAt(index, 1);
@@ -476,7 +539,7 @@ function SkillRadarChart({ skills }: { skills: SkillPerformance[] }) {
       <polygon points={polygon} fill="var(--color-primary)" fillOpacity="0.18" stroke="var(--color-primary)" strokeWidth="2.5" />
       {validSkills.map((skill, index) => {
         const point = pointAt(index, skill.percentage!);
-        return <circle key={skill.skillId} cx={point.x} cy={point.y} r="4" fill="var(--color-primary)"><title>{`${skill.skillName || skill.skillId}: ${skill.percentage}%`}</title></circle>;
+        return <circle key={skill.skillId} className="skill-radar-point" cx={point.x} cy={point.y} r="4" fill="var(--color-primary)" tabIndex={0} aria-label={`${skill.skillName || skill.skillId}: ${skill.percentage}%`}><title>{`${skill.skillName || skill.skillId}: ${skill.percentage}%`}</title></circle>;
       })}
     </svg>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem 0.8rem', marginTop: '0.25rem' }}>
@@ -488,11 +551,12 @@ function SkillRadarChart({ skills }: { skills: SkillPerformance[] }) {
 function SkillScoreBars({ skills }: { skills: SkillPerformance[] }) {
   if (skills.length === 0) return <p style={{ ...chartMutedStyle, margin: 0 }}>This submitted attempt has no valid per-skill percentages to compare.</p>;
   return <div style={{ display: 'grid', gap: '0.85rem' }}>
+    <style>{`.skill-score-bar:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }`}</style>
     {skills.map((skill) => <div key={skill.skillId}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.3rem', color: 'var(--color-text-secondary)', fontSize: '0.82rem' }}>
-        <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{skill.skillName || skill.skillId}</span><strong style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>{skill.percentage}%</strong>
+        <span title={skill.skillName || skill.skillId} style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{skill.skillName || skill.skillId}</span><strong style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>{skill.percentage}%</strong>
       </div>
-      <div role="progressbar" aria-label={`${skill.skillName || skill.skillId} score`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={skill.percentage} style={{ height: '9px', borderRadius: '99px', overflow: 'hidden', background: 'var(--color-bg-alt)' }}>
+      <div className="skill-score-bar" title={`${skill.skillName || skill.skillId}: ${skill.percentage}%`} role="progressbar" aria-label={`${skill.skillName || skill.skillId} score`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={skill.percentage} aria-valuetext={`${skill.percentage}%`} tabIndex={0} style={{ height: '10px', borderRadius: '99px', overflow: 'hidden', background: 'var(--color-bg-alt)' }}>
         <div style={{ height: '100%', width: `${skill.percentage}%`, background: 'linear-gradient(90deg, var(--color-primary), var(--color-accent))', borderRadius: 'inherit' }} />
       </div>
     </div>)}
@@ -519,21 +583,21 @@ function AttemptStatusDonut({ counts }: { counts: AttemptStatusCounts }) {
     return { ...segment, length, offset };
   });
 
-  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
-    <svg viewBox="0 0 120 120" role="img" aria-label={`Attempt status distribution across ${total} attempts`} style={{ width: '150px', maxWidth: '45%', transform: 'rotate(-90deg)' }}>
+  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '0.85rem' }}>
+    <svg viewBox="0 0 120 120" role="img" aria-label={`Attempt status distribution across ${total} attempts`} style={{ width: '132px', maxWidth: '42%', minWidth: '112px', transform: 'rotate(-90deg)', flexShrink: 0 }}>
       <title>Assessment attempt status distribution</title>
       <circle cx="60" cy="60" r={radius} fill="none" stroke="var(--color-bg-alt)" strokeWidth="16" />
       {arcs.map((arc) => <circle key={arc.label} cx="60" cy="60" r={radius} fill="none" stroke={arc.color} strokeWidth="16" strokeDasharray={`${arc.length} ${circumference - arc.length}`} strokeDashoffset={-arc.offset}>
         <title>{`${arc.label}: ${arc.value}`}</title>
       </circle>)}
     </svg>
-    <ul aria-label="Attempt status legend" style={{ listStyle: 'none', display: 'grid', gap: '0.55rem', padding: 0, margin: 0 }}>
+    <ul aria-label="Attempt status legend" style={{ listStyle: 'none', display: 'grid', gap: '0.4rem', padding: 0, margin: 0, flex: '1 1 140px', minWidth: 0 }}>
       {[
         { label: 'Submitted', value: counts.submitted, color: 'var(--color-success)' },
         { label: 'In progress', value: counts.inProgress, color: 'var(--color-primary)' },
         { label: 'Abandoned', value: counts.abandoned, color: 'var(--color-warning)' },
         { label: 'Unknown status', value: counts.unknown, color: 'var(--color-text-muted)' },
-      ].map((item) => <li key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
+      ].map((item) => <li key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
         <span aria-hidden="true" style={{ width: '0.65rem', height: '0.65rem', borderRadius: '50%', background: item.color }} />
         {item.label}<strong style={{ color: 'var(--color-text-primary)', marginLeft: 'auto' }}>{item.value}</strong>
       </li>)}
@@ -716,7 +780,10 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
     attempts.filter((attempt) => attempt.status === 'SUBMITTED')
       .flatMap((attempt) => getAttemptSkillScores(attempt).map((skill) => skill.skillId)),
   ).size, [attempts]);
-  const improvements = useMemo(() => getSkillImprovements(attempts, assessmentTitles), [attempts, assessmentTitles]);
+  const improvements = useMemo(
+    () => getSkillImprovements(attempts, assessmentTitles, assessmentMetadata),
+    [attempts, assessmentTitles, assessmentMetadata],
+  );
 
   const completedCount = roadmap?.completedItemsCount ?? 0;
   const totalCount = roadmap?.totalItemsCount ?? 0;
@@ -724,41 +791,31 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
 
   const sectionStyle = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 'var(--border-radius-md)', padding: '1.25rem' };
   const mutedStyle = { color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 };
-  const summaryCards = [
-    { label: 'Total attempts', value: statusCounts.total, accent: 'var(--color-primary)' },
-    { label: 'Submitted', value: statusCounts.submitted, accent: 'var(--color-success)' },
-    { label: 'In progress', value: statusCounts.inProgress, accent: 'var(--color-primary)' },
-    { label: 'Abandoned', value: statusCounts.abandoned, accent: 'var(--color-warning)' },
-    { label: 'Skills with results', value: skillsWithResults, accent: 'var(--color-accent)' },
-  ];
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <section className="cockpit-panel" style={{ ...sectionStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h2 style={{ color: '#0f172a', fontSize: '1.2rem', margin: '0 0 0.35rem' }}>Your skill evidence</h2>
-          <p style={mutedStyle}>
-            {goalState.loading ? 'Loading career goal…' : goalState.error ? 'Career goal unavailable.' : goal?.targetRole ? `Target role: ${goal.targetRole}` : 'No active career goal is set.'}
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
+      <section className="cockpit-panel" style={{ ...sectionStyle, padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 0.2rem' }}>Career goal</p>
+          <strong style={{ color: 'var(--color-text-primary)', fontSize: '1rem', overflowWrap: 'anywhere' }}>
+            {goalState.loading ? 'Loading…' : goalState.error ? 'Goal unavailable' : goal?.targetRole || 'No active goal'}
+          </strong>
         </div>
-        <Button type="button" variant="secondary" onClick={() => setRefreshKey((key) => key + 1)} style={{ width: 'auto' }}>
-          <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Refresh
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span title="Distinct exact skill IDs with submitted assessment results" style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', padding: '0.45rem 0.7rem', border: '1px solid var(--color-border)', borderRadius: '999px', background: 'var(--color-surface-hover)' }}>
+            <strong style={{ color: 'var(--color-primary)' }}>{assessmentState.loading || assessmentState.error ? '—' : skillsWithResults}</strong> skills with results
+          </span>
+          <Button type="button" variant="secondary" onClick={() => setRefreshKey((key) => key + 1)} style={{ width: 'auto' }}>
+            <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Refresh
+          </Button>
+        </div>
       </section>
 
-      <section aria-label="Assessment summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 145px), 1fr))', gap: '0.75rem' }}>
-        {summaryCards.map((card) => <article key={card.label} className="cockpit-panel" style={{ ...chartPanelStyle, padding: '1rem 1.1rem' }}>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', fontWeight: 600, margin: '0 0 0.35rem' }}>{card.label}</p>
-          <strong style={{ color: card.accent, fontSize: '1.7rem', lineHeight: 1.2 }}>{assessmentState.loading || assessmentState.error ? '—' : card.value}</strong>
-        </article>)}
-      </section>
-
-      <section aria-label="Assessment analytics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '1rem', alignItems: 'stretch' }}>
+      <section aria-label="Score history" style={{ display: 'grid', minWidth: 0 }}>
         <article className="cockpit-panel" style={chartPanelStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
             <div>
               <h2 style={chartTitleStyle}>Score history</h2>
-              <p style={chartMutedStyle}>Submitted scores over time · percentages are assessment results, not proficiency levels.</p>
+              <p title="Assessment percentages describe submitted quiz results, not validated proficiency levels." style={{ ...chartMutedStyle, marginBottom: '0.75rem' }}>Submitted scores · grouped by quiz</p>
             </div>
             {scoreHistoryGroups.length > 1 && <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
               Quiz&nbsp;
@@ -775,26 +832,52 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
               <ScoreTrendChart points={selectedScoreGroup.points} />
             </>}
         </article>
+      </section>
+
+      <section aria-label="Assessment and roadmap progress" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem', alignItems: 'stretch' }}>
         <article className="cockpit-panel" style={chartPanelStyle}>
           <h2 style={chartTitleStyle}>Attempt status</h2>
-          <p style={chartMutedStyle}>Each attempt is counted once using its returned status.</p>
           {assessmentState.loading ? <p style={chartMutedStyle}>Loading attempt statuses…</p>
             : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
             : <AttemptStatusDonut counts={statusCounts} />}
         </article>
+        <article className="cockpit-panel" style={chartPanelStyle}>
+          <h2 style={chartTitleStyle}>Roadmap progress</h2>
+          {roadmapState.loading ? <p style={chartMutedStyle}>Loading roadmap progress…</p>
+            : roadmapState.error ? <p role="alert" style={{ ...mutedStyle, color: 'var(--color-error)' }}>{roadmapState.error}</p>
+            : !roadmap ? <p style={{ ...chartMutedStyle, margin: 0 }}>No active roadmap is available yet.</p>
+            : <>
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', margin: '0 0 0.6rem', overflowWrap: 'anywhere' }}>{roadmap.targetRole || goal?.targetRole || 'Active roadmap'}</p>
+              <p style={{ ...chartMutedStyle, marginBottom: '0.6rem' }}>
+                {completion === null ? 'No checklist activities' : `${completedCount} of ${totalCount} activities · ${completion}%`}
+              </p>
+              {completion !== null && <div role="progressbar" aria-label="Roadmap completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion} title={`${completedCount} of ${totalCount} roadmap activities completed`} style={{ height: '10px', background: 'var(--color-bg-alt)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ width: `${completion}%`, height: '100%', background: 'var(--gradient-hero)', borderRadius: 'inherit' }} />
+              </div>}
+              {subtopics.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 190px), 1fr))', gap: '0.55rem', marginTop: '0.85rem' }}>
+                {subtopics.map((subtopic) => {
+                  const count = subtopic.checklist.length;
+                  const done = subtopic.checklist.filter((item) => item.completed).length;
+                  return <div key={subtopic.id} title={`${subtopic.title}: ${done} of ${count} activities completed`} style={{ minWidth: 0, padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', background: 'var(--color-surface-hover)' }}>
+                    <strong style={{ display: 'block', color: 'var(--color-text-primary)', fontSize: '0.8rem', overflowWrap: 'anywhere' }}>{subtopic.title}</strong>
+                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.74rem' }}>{count === 0 ? 'No activities' : `${done}/${count} complete`}</span>
+                  </div>;
+                })}
+              </div>}
+            </>}
+        </article>
       </section>
 
-      <section aria-label="Assessment skill comparisons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1rem', alignItems: 'stretch' }}>
-        <article className="cockpit-panel" style={chartPanelStyle}>
+      <section aria-label="Skill comparison" className="cockpit-panel" style={chartPanelStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div>
               <h2 style={chartTitleStyle}>Skill comparison</h2>
-              <p style={chartMutedStyle}>All values come from the same submitted attempt.</p>
+              <p style={{ ...chartMutedStyle, marginBottom: 0 }}>Scores from one submitted attempt</p>
             </div>
             {submittedAttempts.length > 1 && <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
               Attempt&nbsp;
               <select aria-label="Choose submitted attempt for skill comparison" value={selectedSkillAttempt?._id ?? ''} onChange={(event) => setSelectedSkillAttemptId(event.target.value)} style={{ maxWidth: '220px', padding: '0.45rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}>
-                {submittedAttempts.map((attempt) => <option key={attempt._id} value={attempt._id}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · {formatDate(attempt.submittedAt)}</option>)}
+                {submittedAttempts.map((attempt) => <option key={attempt._id} value={attempt._id}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(attempt._id) ?? 'number unavailable'} · {formatDate(attempt.submittedAt)}</option>)}
               </select>
             </label>}
           </div>
@@ -802,45 +885,28 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
             : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
             : !selectedSkillAttempt ? <p style={{ ...chartMutedStyle, margin: 0 }}>Submit an assessment with skill-specific results to compare skills.</p>
             : <>
-              <p style={{ color: 'var(--color-text-primary)', fontSize: '0.82rem', fontWeight: 700, margin: '0 0 0.5rem' }}>{assessmentTitles[selectedSkillAttempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(selectedSkillAttempt._id) ?? 'number unavailable'}</p>
-              <SkillRadarChart skills={selectedRadarSkills} />
+              <p title={formatDate(selectedSkillAttempt.submittedAt)} style={{ color: 'var(--color-text-primary)', fontSize: '0.84rem', fontWeight: 700, margin: '0.8rem 0 0.9rem', overflowWrap: 'anywhere' }}>
+                {assessmentTitles[selectedSkillAttempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(selectedSkillAttempt._id) ?? 'number unavailable'} · {formatDate(selectedSkillAttempt.submittedAt)}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem', alignItems: 'start' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ ...chartTitleStyle, fontSize: '0.9rem', marginBottom: '0.55rem' }}>Radar</h3>
+                  <SkillRadarChart skills={selectedRadarSkills} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ ...chartTitleStyle, fontSize: '0.9rem', marginBottom: '0.55rem' }}>Scores by skill</h3>
+                  <SkillScoreBars skills={selectedAttemptSkills} />
+                </div>
+              </div>
             </>}
-        </article>
-        <article className="cockpit-panel" style={chartPanelStyle}>
-          <h2 style={chartTitleStyle}>Scores by skill</h2>
-          <p style={chartMutedStyle}>A direct comparison within the selected attempt shown beside the radar chart.</p>
-          {assessmentState.loading ? <p style={chartMutedStyle}>Loading skill scores…</p>
-            : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : <>
-              {selectedSkillAttempt && <p style={{ color: 'var(--color-text-primary)', fontSize: '0.82rem', fontWeight: 700, margin: '0 0 0.8rem' }}>{assessmentTitles[selectedSkillAttempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(selectedSkillAttempt._id) ?? 'number unavailable'} · {formatDate(selectedSkillAttempt.submittedAt)}</p>}
-              <SkillScoreBars skills={selectedAttemptSkills} />
-            </>}
-        </article>
       </section>
 
-      <section aria-label="Recent assessment activity and improvement" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem' }}>
-        <article className="cockpit-panel" style={chartPanelStyle}>
-          <h2 style={chartTitleStyle}>Recent assessment activity</h2>
-          <p style={chartMutedStyle}>Most recent attempts, including unfinished attempts.</p>
-          {assessmentState.loading ? <p style={chartMutedStyle}>Loading recent activity…</p>
-            : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : attemptHistory.length === 0 ? <p style={{ ...chartMutedStyle, margin: 0 }}>No assessment activity yet.</p>
-            : <div style={{ display: 'grid', gap: '0.7rem' }}>
-              {attemptHistory.slice(0, 4).map((attempt) => <div key={attempt._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.8rem', paddingBottom: '0.65rem', borderBottom: '1px solid var(--color-border-subtle)' }}>
-                <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-                  <strong style={{ color: 'var(--color-text-primary)', fontSize: '0.85rem', overflowWrap: 'anywhere' }}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'}</strong>
-                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', margin: '0.15rem 0 0' }}>{formatAttemptStatus(attempt.status)} · {formatDate(attempt.submittedAt ?? attempt.startedAt)}</p>
-                </div>
-                <span style={{ color: 'var(--color-primary)', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{attempt.status === 'SUBMITTED' && getAttemptPercentage(attempt) !== undefined ? `${getAttemptPercentage(attempt)}%` : '—'}</span>
-              </div>)}
-            </div>}
-        </article>
+      <section aria-label="Improvement between attempts">
         <article className="cockpit-panel" style={chartPanelStyle}>
           <h2 style={chartTitleStyle}>Improvement between attempts</h2>
-          <p style={chartMutedStyle}>Percentage-point change for the same assessment record and skill only.</p>
           {assessmentState.loading ? <p style={chartMutedStyle}>Loading comparable results…</p>
             : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : improvements.length === 0 ? <p style={{ ...chartMutedStyle, margin: 0 }}>No repeated, dated submitted results for the same assessment and skill are available yet.</p>
+            : improvements.length === 0 ? <p style={{ ...chartMutedStyle, margin: 0 }}>{getSkillImprovementEmptyMessage(attempts, assessmentMetadata)}</p>
             : <div style={{ display: 'grid', gap: '0.7rem' }}>
               {improvements.map((improvement) => <div key={improvement.key} style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-md)', background: 'var(--color-surface-hover)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
@@ -849,66 +915,40 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
                     {improvement.changePoints > 0 ? '+' : ''}{improvement.changePoints} pp
                   </strong>
                 </div>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.76rem', margin: '0.25rem 0 0' }}>{improvement.assessmentTitle}: {improvement.earlierScore}% → {improvement.laterScore}% · {formatDate(improvement.earlierDate)} to {formatDate(improvement.laterDate)}</p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.76rem', margin: '0.25rem 0 0' }}>{improvement.assessmentTitle} · {improvement.comparisonLabel}: {improvement.earlierScore}% → {improvement.laterScore}% · {formatDate(improvement.earlierDate)} to {formatDate(improvement.laterDate)}</p>
               </div>)}
             </div>}
         </article>
       </section>
 
-      <section className="cockpit-panel" style={sectionStyle}>
-        <h2 style={{ color: '#0f172a', fontSize: '1.1rem', margin: '0 0 1rem' }}>Assessment results by skill</h2>
+      <section aria-label="Latest skill results" className="cockpit-panel" style={{ ...sectionStyle, padding: '1rem 1.25rem' }}>
+        <h2 style={{ ...chartTitleStyle, marginBottom: '0.75rem' }}>Latest skill results</h2>
         {assessmentState.loading ? <p style={mutedStyle}>Loading assessment scores…</p>
           : assessmentState.error ? <p role="alert" style={{ ...mutedStyle, color: '#b91c1c' }}>{assessmentState.error}</p>
           : skillHistory.length === 0 ? <p style={mutedStyle}>No submitted skill-specific assessment results yet.</p>
-          : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.8rem' }}>
+          : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: '0.55rem' }}>
             {skillHistory.map(({ skillId, entries }) => {
               const latest = entries[0];
               const mappedSubtopic = subtopicsById.get(skillId);
               const label = latest.result.skillName || mappedSubtopic?.title || 'Unnamed assessment skill';
               return (
-                <article key={skillId} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1rem', background: '#f8fafc' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
-                    <strong style={{ color: '#0f172a' }}>{label}</strong>
-                    <span className={`tech-badge ${mappedSubtopic ? 'tech-badge-emerald' : 'tech-badge-indigo'}`} style={{ flexShrink: 0 }}>
+                <article key={skillId} style={{ minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.7rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-md)', padding: '0.65rem 0.75rem', background: 'var(--color-surface-hover)' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: 'block', color: 'var(--color-text-primary)', fontSize: '0.84rem', overflowWrap: 'anywhere' }}>{label}</strong>
+                    <span title={mappedSubtopic?.title || 'No matching roadmap subtopic'} className={`tech-badge ${mappedSubtopic ? 'tech-badge-emerald' : 'tech-badge-indigo'}`} style={{ display: 'inline-block', marginTop: '0.3rem', fontSize: '0.65rem' }}>
                       {mappedSubtopic ? 'Roadmap match' : 'Unmapped'}
                     </span>
                   </div>
-                  {mappedSubtopic && <p style={{ ...mutedStyle, marginTop: '0.4rem' }}>Roadmap activity: {mappedSubtopic.title}</p>}
-                  <p style={{ color: '#4f46e5', fontSize: '1.5rem', fontWeight: 800, margin: '0.75rem 0 0.2rem' }}>
-                    {typeof latest.result.percentage === 'number' ? `${latest.result.percentage}%` : 'Score unavailable'}
-                  </p>
-                  <p style={mutedStyle}>Latest submitted result · {formatDate(latest.attempt.submittedAt)}</p>
-                  {entries.length > 1 && <p style={{ ...mutedStyle, marginTop: '0.5rem' }}>{entries.length} submitted results in history</p>}
+                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                    <strong style={{ color: 'var(--color-primary)', fontSize: '1.15rem', lineHeight: 1.2 }}>
+                      {typeof latest.result.percentage === 'number' ? `${latest.result.percentage}%` : 'Score unavailable'}
+                    </strong>
+                    <span title={formatDate(latest.attempt.submittedAt)} style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.7rem', marginTop: '0.15rem' }}>{formatDate(latest.attempt.submittedAt)} · {entries.length} result{entries.length === 1 ? '' : 's'}</span>
+                  </div>
                 </article>
               );
             })}
           </div>}
-      </section>
-
-      <section className="cockpit-panel" style={sectionStyle}>
-        <h2 style={{ color: '#0f172a', fontSize: '1.1rem', margin: '0 0 1rem' }}>Roadmap completion</h2>
-        {roadmapState.loading ? <p style={mutedStyle}>Loading roadmap progress…</p>
-          : roadmapState.error ? <p role="alert" style={{ ...mutedStyle, color: '#b91c1c' }}>{roadmapState.error}</p>
-          : !roadmap ? <p style={mutedStyle}>No active roadmap is available yet.</p>
-          : <>
-            <p style={{ color: '#0f172a', margin: '0 0 0.5rem' }}>{roadmap.targetRole || goal?.targetRole || 'Active roadmap'}</p>
-            <p style={{ ...mutedStyle, marginBottom: '0.75rem' }}>
-              {completion === null ? 'No checklist activities in this roadmap.' : `${completedCount} of ${totalCount} activities completed (${completion}%).`}
-            </p>
-            {completion !== null && <div role="progressbar" aria-label="Roadmap completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion} style={{ height: '8px', background: '#e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-              <div style={{ width: `${completion}%`, height: '100%', background: '#4f46e5' }} />
-            </div>}
-            {subtopics.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.7rem', marginTop: '1rem' }}>
-              {subtopics.map((subtopic) => {
-                const count = subtopic.checklist.length;
-                const done = subtopic.checklist.filter((item) => item.completed).length;
-                return <div key={subtopic.id} style={{ padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                  <strong style={{ color: '#0f172a', fontSize: '0.9rem' }}>{subtopic.title}</strong>
-                  <p style={{ ...mutedStyle, marginTop: '0.3rem' }}>{count === 0 ? 'No checklist activities' : `${done} of ${count} activities completed`}</p>
-                </div>;
-              })}
-            </div>}
-          </>}
       </section>
 
       <section className="cockpit-panel" style={sectionStyle}>
