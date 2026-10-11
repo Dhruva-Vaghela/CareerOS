@@ -10,6 +10,7 @@ import { PdfViewerModal } from '../components/PdfViewerModal';
 import { RoadmapView } from '../components/RoadmapView';
 import { CompanyInterviewView } from '../components/CompanyInterviewView';
 import { RoadmapAssessmentExperience } from '../components/RoadmapAssessmentExperience';
+import { SkillTrackingView } from '../components/SkillTrackingView';
 import {
   User as UserIcon,
   Briefcase,
@@ -48,8 +49,8 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const tabParam = (searchParams.get('tab') as 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals') || 'dashboard';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile'>(tabParam);
+  const tabParam = (searchParams.get('tab') as 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking') || 'dashboard';
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'profile'>(tabParam);
 
   const [resume, setResume] = useState<ResumeData | null>(null);
   const [goal, setGoal] = useState<GoalData | null>(null);
@@ -65,7 +66,7 @@ export function DashboardPage() {
     }
   }, [tabParam]);
 
-  const handleTabChange = (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => {
+  const handleTabChange = (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'profile') => {
     setActiveTab(tab);
     if (tab !== 'profile') {
       setSearchParams({ tab });
@@ -238,10 +239,14 @@ export function DashboardPage() {
                   ? 'Resume Foundation Center'
                   : activeTab === 'career-goals'
                   ? 'Career Goals & Timeline'
+                  : activeTab === 'skill-tracking'
+                  ? 'Skill Tracking'
                   : 'Interview Command Center'}
               </h1>
               <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong>
+                {activeTab === 'skill-tracking'
+                  ? <>Assessment results and roadmap activity for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>
+                  : <>Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>}
               </p>
             </div>
           </div>
@@ -252,6 +257,8 @@ export function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {activeTab === 'skill-tracking' && <SkillTrackingView accessToken={accessToken} />}
 
         {/* AI Learning Roadmap CTA Banner (Visible on Dashboard Overview) */}
         {activeTab === 'dashboard' && (

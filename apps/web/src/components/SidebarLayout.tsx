@@ -17,12 +17,13 @@ import {
   Activity,
   Compass,
   Building2,
+  BarChart3,
 } from 'lucide-react';
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
-  activeTab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile';
-  onTabChange?: (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'profile') => void;
+  activeTab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'profile';
+  onTabChange?: (tab: 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'profile') => void;
 }
 
 export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
@@ -43,6 +44,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { id: 'assessment', label: 'Assessments', icon: ClipboardCheck, path: '/dashboard?tab=assessment' },
+    { id: 'skill-tracking', label: 'Skill Tracking', icon: BarChart3, path: '/dashboard?tab=skill-tracking' },
     { id: 'roadmap', label: 'AI Roadmap', icon: Compass, path: '/dashboard?tab=roadmap' },
     { id: 'interview', label: 'Company Interview', icon: Building2, path: '/dashboard?tab=interview' },
     { id: 'digital-twin', label: 'Career Digital Twin', icon: Dna, path: '/dashboard?tab=digital-twin' },
