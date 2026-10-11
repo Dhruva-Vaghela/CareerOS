@@ -20,6 +20,74 @@ interface AssessmentAttempt {
   skillPerformance?: SkillPerformance[];
 }
 
+export interface AssessmentQuizMetadata {
+  roadmapId?: string;
+  roadmapVersion?: number;
+  moduleId?: string;
+  topicId?: string;
+  type?: string;
+}
+
+const hasCompleteQuizIdentity = (metadata?: AssessmentQuizMetadata): metadata is Required<AssessmentQuizMetadata> =>
+  typeof metadata?.roadmapId === 'string' && metadata.roadmapId.length > 0
+  && typeof metadata.roadmapVersion === 'number' && Number.isFinite(metadata.roadmapVersion)
+  && typeof metadata.moduleId === 'string' && metadata.moduleId.length > 0
+  && typeof metadata.topicId === 'string' && metadata.topicId.length > 0
+  && typeof metadata.type === 'string' && metadata.type.length > 0;
+
+const quizIdentityKey = (metadata: Required<AssessmentQuizMetadata>) => JSON.stringify([
+  metadata.roadmapId,
+  metadata.roadmapVersion,
+  metadata.moduleId,
+  metadata.topicId,
+  metadata.type,
+]);
+
+/** Assigns display numbers without mutating backend records or depending on presentation order. */
+export function getSkillTrackingAttemptNumbers(
+  attempts: AssessmentAttempt[],
+  assessmentsById: Record<string, AssessmentQuizMetadata>,
+): Map<string, number | undefined> {
+  const groups = new Map<string, AssessmentAttempt[]>();
+  const displayNumbers = new Map<string, number | undefined>();
+
+  for (const attempt of attempts) {
+    const metadata = assessmentsById[attempt.assessmentId];
+    if (!hasCompleteQuizIdentity(metadata)) {
+      displayNumbers.set(attempt._id, attempt.attemptNumber);
+      continue;
+    }
+    const key = quizIdentityKey(metadata);
+    const group = groups.get(key) ?? [];
+    group.push(attempt);
+    groups.set(key, group);
+  }
+
+  for (const group of groups.values()) {
+    // Without valid timestamps the relative order cannot be established safely;
+    // keep the backend's per-record value for those entries.
+    const dated = group.filter((attempt) => Number.isFinite(Date.parse(attempt.startedAt ?? '')));
+    for (const attempt of group) {
+      if (!Number.isFinite(Date.parse(attempt.startedAt ?? ''))) {
+        displayNumbers.set(attempt._id, attempt.attemptNumber);
+      }
+    }
+    dated.sort((left, right) => {
+      const timeDifference = Date.parse(left.startedAt!) - Date.parse(right.startedAt!);
+      if (timeDifference !== 0) return timeDifference;
+      const assessmentDifference = left.assessmentId.localeCompare(right.assessmentId);
+      if (assessmentDifference !== 0) return assessmentDifference;
+      const numberDifference = (left.attemptNumber ?? Number.MAX_SAFE_INTEGER)
+        - (right.attemptNumber ?? Number.MAX_SAFE_INTEGER);
+      if (numberDifference !== 0) return numberDifference;
+      return left._id.localeCompare(right._id);
+    });
+    dated.forEach((attempt, index) => displayNumbers.set(attempt._id, index + 1));
+  }
+
+  return displayNumbers;
+}
+
 interface RoadmapChecklistItem {
   id: string;
   title: string;
@@ -78,6 +146,7 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [attempts, setAttempts] = useState<AssessmentAttempt[]>([]);
   const [assessmentTitles, setAssessmentTitles] = useState<Record<string, string>>({});
+  const [assessmentMetadata, setAssessmentMetadata] = useState<Record<string, AssessmentQuizMetadata>>({});
   const [roadmap, setRoadmap] = useState<RoadmapData | null>(null);
   const [goal, setGoal] = useState<{ targetRole: string } | null>(null);
   const [assessmentState, setAssessmentState] = useState({ loading: true, error: '' });
@@ -91,6 +160,7 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
     const loadAttempts = async () => {
       setAssessmentState({ loading: true, error: '' });
       setAssessmentTitles({});
+      setAssessmentMetadata({});
       try {
         const response = await fetch('/api/v1/assessments/attempts/me', { headers, signal: controller.signal });
         const body = await response.json();
@@ -127,12 +197,23 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
               const assessments = unwrapData(assessmentsBody)?.assessments;
               if (Array.isArray(assessments)) {
                 const titles: Record<string, string> = {};
+                const metadataById: Record<string, AssessmentQuizMetadata> = {};
                 for (const assessment of assessments) {
                   const id = typeof assessment?._id === 'string' ? assessment._id : assessment?.id;
                   const title = typeof assessment?.title === 'string' ? assessment.title.trim() : '';
-                  if (typeof id === 'string' && id && title) titles[id] = title;
+                  if (typeof id === 'string' && id) {
+                    if (title) titles[id] = title;
+                    metadataById[id] = {
+                      roadmapId: typeof assessment?.roadmapId === 'string' ? assessment.roadmapId : undefined,
+                      roadmapVersion: typeof assessment?.roadmapVersion === 'number' ? assessment.roadmapVersion : undefined,
+                      moduleId: typeof assessment?.moduleId === 'string' ? assessment.moduleId : undefined,
+                      topicId: typeof assessment?.topicId === 'string' ? assessment.topicId : undefined,
+                      type: typeof assessment?.type === 'string' ? assessment.type : undefined,
+                    };
+                  }
                 }
                 setAssessmentTitles(titles);
+                setAssessmentMetadata(metadataById);
               }
             }
           } catch (error) {
@@ -214,6 +295,10 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
       new Date(right.submittedAt ?? right.startedAt ?? 0).getTime()
       - new Date(left.submittedAt ?? left.startedAt ?? 0).getTime(),
     ), [attempts]);
+  const attemptNumbers = useMemo(
+    () => getSkillTrackingAttemptNumbers(attempts, assessmentMetadata),
+    [attempts, assessmentMetadata],
+  );
 
   const completedCount = roadmap?.completedItemsCount ?? 0;
   const totalCount = roadmap?.totalItemsCount ?? 0;
@@ -302,7 +387,7 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
               const score = typeof attempt.percentage === 'number' ? attempt.percentage : attempt.score;
               return <div key={attempt._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
                 <div>
-                  <strong style={{ color: '#0f172a' }}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · attempt {attempt.attemptNumber ?? ''}</strong>
+                  <strong style={{ color: '#0f172a' }}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(attempt._id) ?? ''}</strong>
                   <p style={{ ...mutedStyle, marginTop: '0.2rem' }}>{formatAttemptStatus(attempt.status)} · {formatDate(attempt.submittedAt ?? attempt.startedAt)}</p>
                 </div>
                 <strong style={{ color: '#4f46e5' }}>{attempt.status !== 'SUBMITTED' ? 'No submitted score' : typeof score === 'number' ? `${score}% overall` : 'Overall score unavailable'}</strong>
