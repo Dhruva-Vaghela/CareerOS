@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, CheckCircle2, Clock3, FileText, RefreshCw, Target, Trophy } from 'lucide-react';
+import { CheckCircle2, Clock3, FileText, RefreshCw, Target, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Alert } from './Alert';
 import { Button } from './Button';
@@ -226,18 +226,33 @@ export function RoadmapAssessmentExperience() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <section className="cockpit-panel" style={{ padding: '1.5rem' }}>
+      <section style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '16px', padding: '1.75rem', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
           <div>
-            <div className="tech-badge tech-badge-indigo"><BookOpen size={12} /> ROADMAP ASSESSMENTS</div>
-            <h2 style={{ margin: '0.6rem 0 0', color: '#0f172a', fontSize: '1.5rem' }}>Quizzes for your learning path</h2>
-            <p style={{ margin: '0.4rem 0 0', color: '#475569' }}>
+            <span
+              className="alex-question-tag"
+              style={{
+                color: '#2563eb',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                marginBottom: '0.35rem',
+                display: 'block',
+              }}
+            >
+              ROADMAP ASSESSMENTS
+            </span>
+            <h2 style={{ margin: '0 0 0.4rem 0', color: '#0f172a', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+              Quizzes for your learning path
+            </h2>
+            <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>
               {roadmap ? `${roadmap.targetRole} · Roadmap v${roadmap.version}` : 'Topic quizzes and module assessments generated from your current roadmap.'}
             </p>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', color: '#334155', fontSize: '0.9rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', color: '#334155', fontSize: '0.9rem', fontWeight: 600 }}>
             Difficulty
-            <select value={difficulty} onChange={(event) => setDifficulty(event.target.value as 'MEDIUM' | 'HARD')} style={{ padding: '0.5rem 0.65rem', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', color: '#0f172a' }}>
+            <select value={difficulty} onChange={(event) => setDifficulty(event.target.value as 'MEDIUM' | 'HARD')} style={{ padding: '0.5rem 0.75rem', border: '1.5px solid #cbd5e1', borderRadius: '10px', background: '#fff', color: '#0f172a', fontWeight: 500 }}>
               <option value="MEDIUM">Medium</option>
               <option value="HARD">Hard</option>
             </select>

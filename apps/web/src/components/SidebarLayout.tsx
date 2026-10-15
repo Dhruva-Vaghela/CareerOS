@@ -14,7 +14,6 @@ import {
   Menu,
   X,
   ChevronRight,
-  Activity,
   Compass,
   Building2,
   BarChart3,
@@ -114,8 +113,8 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
               CareerOS AI
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.15rem' }}>
-              <span className="tech-badge tech-badge-indigo" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
-                <Activity size={10} className="animate-pulse-glow" /> COCKPIT ONLINE
+              <span className="tech-badge tech-badge-emerald" style={{ fontSize: '0.65rem', padding: '0.1rem 0.45rem' }}>
+                ACTIVE SPEC
               </span>
             </div>
           </div>
@@ -131,9 +130,9 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
                 onClick={() => handleNavClick(item)}
                 className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
               >
-                <Icon size={18} style={{ color: isActive ? '#4f46e5' : '#64748b', transition: 'color 0.25s ease' }} />
-                <span style={{ flex: 1, color: isActive ? '#4f46e5' : '#334155', transition: 'color 0.25s ease' }}>{item.label}</span>
-                {isActive && <ChevronRight size={14} style={{ color: '#4f46e5' }} />}
+                <Icon size={18} style={{ color: isActive ? '#2563eb' : '#64748b', transition: 'color 0.25s ease' }} />
+                <span style={{ flex: 1, color: isActive ? '#2563eb' : '#334155', transition: 'color 0.25s ease' }}>{item.label}</span>
+                {isActive && <ChevronRight size={14} style={{ color: '#2563eb' }} />}
               </div>
             );
           })}
@@ -147,15 +146,15 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: 'var(--gradient-hero)',
+                background: '#eff6ff',
+                border: '1.5px solid #dbeafe',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 700,
-                color: '#fff',
+                color: '#2563eb',
                 fontSize: '0.85rem',
                 flexShrink: 0,
-                boxShadow: 'var(--shadow-glow-indigo)',
                 overflow: 'hidden',
               }}
             >

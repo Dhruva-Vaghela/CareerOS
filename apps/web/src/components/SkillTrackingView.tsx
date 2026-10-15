@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './Button';
+import { useProfile } from '../context/ProfileContext';
 
 interface SkillPerformance {
   skillId: string;
@@ -490,7 +491,7 @@ function ScoreTrendChart({ points }: { points: ScoreHistoryPoint[] }) {
   </div>;
 }
 
-function SkillRadarChart({ skills }: { skills: SkillPerformance[] }) {
+export function SkillRadarChart({ skills }: { skills: SkillPerformance[] }) {
   const validSkills = skills;
   if (!canRenderRadarChart(validSkills)) {
     return <div role="status" style={{ border: '1px solid var(--color-border)', borderLeft: '3px solid var(--color-primary)', borderRadius: 'var(--border-radius-md)', padding: '0.85rem 1rem', background: 'var(--color-surface-hover)' }}>
@@ -548,7 +549,7 @@ function SkillRadarChart({ skills }: { skills: SkillPerformance[] }) {
   </div>;
 }
 
-function SkillScoreBars({ skills }: { skills: SkillPerformance[] }) {
+export function SkillScoreBars({ skills }: { skills: SkillPerformance[] }) {
   if (skills.length === 0) return <p style={{ ...chartMutedStyle, margin: 0 }}>This submitted attempt has no valid per-skill percentages to compare.</p>;
   return <div style={{ display: 'grid', gap: '0.85rem' }}>
     <style>{`.skill-score-bar:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }`}</style>
@@ -606,9 +607,10 @@ function AttemptStatusDonut({ counts }: { counts: AttemptStatusCounts }) {
 }
 
 export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
+  const { profile } = useProfile();
+  const [showAdvancedHistory, setShowAdvancedHistory] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedScoreGroupKey, setSelectedScoreGroupKey] = useState('');
-  const [selectedSkillAttemptId, setSelectedSkillAttemptId] = useState('');
   const [attempts, setAttempts] = useState<AssessmentAttempt[]>([]);
   const [assessmentTitles, setAssessmentTitles] = useState<Record<string, string>>({});
   const [assessmentMetadata, setAssessmentMetadata] = useState<Record<string, AssessmentQuizMetadata>>({});
@@ -772,10 +774,6 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
   const selectedScoreGroup = scoreHistoryGroups.find((group) => group.key === selectedScoreGroupKey)
     ?? scoreHistoryGroups[0];
   const submittedAttempts = attemptHistory.filter((attempt) => attempt.status === 'SUBMITTED');
-  const selectedSkillAttempt = submittedAttempts.find((attempt) => attempt._id === selectedSkillAttemptId)
-    ?? submittedAttempts[0];
-  const selectedAttemptSkills = useMemo(() => getAttemptSkillScores(selectedSkillAttempt), [selectedSkillAttempt]);
-  const selectedRadarSkills = useMemo(() => getRadarChartSkills(selectedSkillAttempt), [selectedSkillAttempt]);
   const skillsWithResults = useMemo(() => new Set(
     attempts.filter((attempt) => attempt.status === 'SUBMITTED')
       .flatMap((attempt) => getAttemptSkillScores(attempt).map((skill) => skill.skillId)),
@@ -789,194 +787,631 @@ export function SkillTrackingView({ accessToken }: SkillTrackingViewProps) {
   const totalCount = roadmap?.totalItemsCount ?? 0;
   const completion = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : null;
 
-  const sectionStyle = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 'var(--border-radius-md)', padding: '1.25rem' };
+  // Dynamic skill category inference
+  const inferSkillCategory = (name: string): string => {
+    const lower = name.toLowerCase();
+    if (/(python|javascript|typescript|golang|go|java|c\+\+|rust|ruby|php|kotlin|swift)/.test(lower)) return 'Language';
+    if (/(sql|postgres|database|mongo|redis|mysql|prisma|nosql|dynamodb|db)/.test(lower)) return 'Data';
+    if (/(git|docker|kubernetes|aws|ci\/cd|linux|tool|devops|cloud|terraform)/.test(lower)) return 'Tooling';
+    if (/(dsa|algorithm|data structure|tree|graph|dynamic programming|complexity|recursion|leetcode|fundamentals)/.test(lower)) return 'Fundamentals';
+    if (/(system design|architecture|microservices|distributed|scalability|load balanc|cache)/.test(lower)) return 'Architecture';
+    if (/(communication|soft skill|behavioral|interview|leadership|teamwork)/.test(lower)) return 'Soft Skills';
+    if (/(machine learning|deep learning|ai|model|llm|nlp|neural|pytorch|tensorflow)/.test(lower)) return 'AI';
+    if (/(react|vue|angular|svelte|next\.js|frontend|css|html|tailwind|ui|ux)/.test(lower)) return 'Frontend';
+    if (/(node|express|api|backend|rest|graphql|grpc|nest)/.test(lower)) return 'Backend';
+    return 'Engineering';
+  };
+
+  // Derive actual user skills and scores from assessments, roadmap progress, and profile interests
+  const dynamicSkills = useMemo(() => {
+    const skillMap = new Map<string, {
+      id: string;
+      name: string;
+      category: string;
+      score: number;
+      trend: string;
+      evidenceCount: number;
+    }>();
+
+    // 1. First priority: Real Assessment Attempt Evidence
+    for (const { skillId, entries } of skillHistory) {
+      if (!entries || entries.length === 0) continue;
+      const latest = entries[0];
+      const prev = entries.length > 1 ? entries[1] : null;
+
+      const rawScore = typeof latest.result.percentage === 'number'
+        ? latest.result.percentage
+        : typeof latest.attempt.percentage === 'number'
+        ? latest.attempt.percentage
+        : latest.attempt.score ?? 0;
+      const score = Math.max(0, Math.min(100, Math.round(rawScore)));
+
+      let trend = '— flat';
+      if (prev) {
+        const prevRaw = typeof prev.result.percentage === 'number'
+          ? prev.result.percentage
+          : typeof prev.attempt.percentage === 'number'
+          ? prev.attempt.percentage
+          : prev.attempt.score ?? 0;
+        const diff = score - Math.round(prevRaw);
+        trend = diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '— flat';
+      } else if (score > 0) {
+        trend = `+${score}`;
+      }
+
+      const matchedSubtopic = subtopicsById.get(skillId);
+      const skillName = latest.result.skillName || matchedSubtopic?.title || assessmentTitles[latest.attempt.assessmentId] || skillId;
+      const key = skillName.trim().toLowerCase();
+
+      skillMap.set(key, {
+        id: skillId,
+        name: skillName,
+        category: inferSkillCategory(skillName),
+        score,
+        trend,
+        evidenceCount: entries.length,
+      });
+    }
+
+    // 2. Second priority: Active Roadmap Topics & Subtopics
+    for (const subtopic of subtopics) {
+      const key = subtopic.title.trim().toLowerCase();
+      if (skillMap.has(key)) continue;
+
+      const totalItems = subtopic.checklist?.length ?? 0;
+      const doneItems = subtopic.checklist?.filter((item) => item.completed).length ?? 0;
+      const score = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+      const trend = doneItems > 0 ? `+${doneItems * 10}` : '— flat';
+
+      skillMap.set(key, {
+        id: subtopic.id,
+        name: subtopic.title,
+        category: inferSkillCategory(subtopic.title),
+        score,
+        trend,
+        evidenceCount: doneItems,
+      });
+    }
+
+    // 3. Third priority: User Profile Interests
+    const interests = profile?.interests ?? [];
+    for (const interest of interests) {
+      if (!interest) continue;
+      const key = interest.trim().toLowerCase();
+      if (skillMap.has(key)) continue;
+
+      skillMap.set(key, {
+        id: `interest-${key}`,
+        name: interest.trim(),
+        category: inferSkillCategory(interest),
+        score: 0,
+        trend: '— flat',
+        evidenceCount: 0,
+      });
+    }
+
+    // 4. Default Core Disciplines (ensuring 8 clean axes for the octagonal radar)
+    const foundationDisciplines = [
+      { name: 'Python', category: 'Language' },
+      { name: 'SQL & Databases', category: 'Data' },
+      { name: 'Git & Version Control', category: 'Tooling' },
+      { name: 'DSA & Algorithms', category: 'Fundamentals' },
+      { name: 'System Design', category: 'Architecture' },
+      { name: 'Communication', category: 'Soft Skills' },
+      { name: 'Machine Learning', category: 'AI' },
+      { name: 'Cloud & Infrastructure', category: 'DevOps' },
+    ];
+
+    for (const discipline of foundationDisciplines) {
+      if (skillMap.size >= 8) break;
+      const key = discipline.name.trim().toLowerCase();
+      if (!skillMap.has(key)) {
+        skillMap.set(key, {
+          id: `core-${key}`,
+          name: discipline.name,
+          category: discipline.category,
+          score: 0,
+          trend: '— flat',
+          evidenceCount: 0,
+        });
+      }
+    }
+
+    return Array.from(skillMap.values());
+  }, [skillHistory, subtopics, subtopicsById, assessmentTitles, profile?.interests]);
+
+  // Actual skills list (top 8 for radar and cards grid)
+  const actualSkills = useMemo(() => dynamicSkills.slice(0, 8), [dynamicSkills]);
+
+  // Radar geometry matching the octagonal spider chart
+  const radarWidth = 520;
+  const radarHeight = 360;
+  const radarCx = radarWidth / 2;
+  const radarCy = 175;
+  const radarR = 115;
+
+  const getRadarCoords = (index: number, scaleRatio: number) => {
+    const angle = -Math.PI / 2 + (index * 2 * Math.PI) / 8;
+    return {
+      x: radarCx + Math.cos(angle) * radarR * scaleRatio,
+      y: radarCy + Math.sin(angle) * radarR * scaleRatio,
+      angle,
+    };
+  };
+
+  const radarPolygonPoints = actualSkills.map((skill, idx) => {
+    const ratio = Math.max(0.06, skill.score / 100);
+    const coords = getRadarCoords(idx, ratio);
+    return `${coords.x.toFixed(1)},${coords.y.toFixed(1)}`;
+  }).join(' ');
+
+  const getOctagonRingPoints = (ringScale: number) => {
+    return Array.from({ length: 8 }, (_, idx) => {
+      const coords = getRadarCoords(idx, ringScale);
+      return `${coords.x.toFixed(1)},${coords.y.toFixed(1)}`;
+    }).join(' ');
+  };
+
+  const radarAxes = actualSkills.map((skill, idx) => {
+    const angle = -Math.PI / 2 + (idx * 2 * Math.PI) / 8;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const textAnchor: 'middle' | 'start' | 'end' =
+      Math.abs(cos) < 0.25 ? 'middle' : cos > 0 ? 'start' : 'end';
+    const dy = Math.abs(sin) < 0.25 ? 4 : sin < 0 ? -10 : 16;
+    const dx = Math.abs(cos) < 0.25 ? 0 : cos > 0 ? 12 : -12;
+    return {
+      name: getRadarAxisLabel(skill.name),
+      fullName: skill.name,
+      textAnchor,
+      dy,
+      dx,
+    };
+  });
+
+  const overallConfidence = useMemo(() => {
+    if (actualSkills.length === 0) return 0;
+    const avgScore = Math.round(actualSkills.reduce((sum, s) => sum + s.score, 0) / actualSkills.length);
+    const submittedCount = attempts.filter((a) => a.status === 'SUBMITTED').length;
+    if (submittedCount === 0 && completedCount === 0) {
+      return avgScore > 0 ? Math.min(avgScore, 20) : 0;
+    }
+    const evidenceRatio = Math.min(1, 0.4 + (submittedCount * 0.15) + (totalCount > 0 ? (completedCount / totalCount) * 0.45 : 0));
+    return Math.min(100, Math.round(avgScore * evidenceRatio));
+  }, [actualSkills, attempts, completedCount, totalCount]);
+
+  const evidencePiecesCount = useMemo(() => {
+    const submittedCount = attempts.filter((a) => a.status === 'SUBMITTED').length;
+    return (submittedCount * 4) + completedCount;
+  }, [attempts, completedCount]);
+
+  const criticalGapsCount = useMemo(() => {
+    return actualSkills.filter((s) => s.score < 40).length;
+  }, [actualSkills]);
+
+  const lastUpdatedLabel = useMemo(() => {
+    const latestAttempt = submittedAttempts[0];
+    if (latestAttempt?.submittedAt) {
+      const date = new Date(latestAttempt.submittedAt);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+    }
+    return 'Recently';
+  }, [submittedAttempts]);
+
+  const sectionStyle = { background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: '16px', padding: '1.5rem' };
   const mutedStyle = { color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
-      <section className="cockpit-panel" style={{ ...sectionStyle, padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
-        <div style={{ minWidth: 0 }}>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 0.2rem' }}>Career goal</p>
-          <strong style={{ color: 'var(--color-text-primary)', fontSize: '1rem', overflowWrap: 'anywhere' }}>
-            {goalState.loading ? 'Loading…' : goalState.error ? 'Goal unavailable' : goal?.targetRole || 'No active goal'}
-          </strong>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <span title="Distinct exact skill IDs with submitted assessment results" style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', padding: '0.45rem 0.7rem', border: '1px solid var(--color-border)', borderRadius: '999px', background: 'var(--color-surface-hover)' }}>
-            <strong style={{ color: 'var(--color-primary)' }}>{assessmentState.loading || assessmentState.error ? '—' : skillsWithResults}</strong> skills with results
-          </span>
-          <Button type="button" variant="secondary" onClick={() => setRefreshKey((key) => key + 1)} style={{ width: 'auto' }}>
-            <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Refresh
-          </Button>
-        </div>
-      </section>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0, maxWidth: '1140px', margin: '0 auto' }}>
+      {/* 1. Main Page Header */}
+      <div>
+        <span
+          className="alex-question-tag"
+          style={{
+            color: '#2563eb',
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            marginBottom: '0.35rem',
+            display: 'block',
+          }}
+        >
+          EVIDENCE-BASED SIGNALS
+        </span>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.45rem 0', letterSpacing: '-0.03em' }}>
+          Your Skill Graph
+        </h1>
+        <p style={{ color: '#475569', fontSize: '1rem', margin: 0, lineHeight: 1.5 }}>
+          Every skill level is anchored to real evidence — quizzes, roadmap tasks, and project activity.
+        </p>
+      </div>
 
-      <section aria-label="Score history" style={{ display: 'grid', minWidth: 0 }}>
-        <article className="cockpit-panel" style={chartPanelStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-            <div>
-              <h2 style={chartTitleStyle}>Score history</h2>
-              <p title="Assessment percentages describe submitted quiz results, not validated proficiency levels." style={{ ...chartMutedStyle, marginBottom: '0.75rem' }}>Submitted scores · grouped by quiz</p>
-            </div>
-            {scoreHistoryGroups.length > 1 && <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-              Quiz&nbsp;
-              <select aria-label="Choose quiz score history" value={selectedScoreGroup?.key ?? ''} onChange={(event) => setSelectedScoreGroupKey(event.target.value)} style={{ maxWidth: '220px', padding: '0.45rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}>
-                {scoreHistoryGroups.map((group) => <option key={group.key} value={group.key}>{group.label}</option>)}
-              </select>
-            </label>}
+      {/* 2. Top Two-Column Section: Skill Radar + Confidence Score */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: '1.25rem' }}>
+        {/* Left Card: Skill radar */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '1.75rem 2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.5rem 0' }}>
+            Skill radar
+          </h2>
+
+          <div style={{ position: 'relative', width: '100%', height: '330px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg
+              viewBox={`0 0 ${radarWidth} ${radarHeight}`}
+              style={{ width: '100%', height: '100%', overflow: 'visible' }}
+            >
+              {/* Octagonal Concentric Rings: 25%, 50%, 75%, 100% */}
+              {[0.25, 0.5, 0.75, 1.0].map((ringScale) => (
+                <polygon
+                  key={ringScale}
+                  points={getOctagonRingPoints(ringScale)}
+                  fill="none"
+                  stroke="#e2e8f0"
+                  strokeWidth="1"
+                />
+              ))}
+
+              {/* 8 Radial Spoke Lines */}
+              {radarAxes.map((axis, idx) => {
+                const outer = getRadarCoords(idx, 1.0);
+                return (
+                  <g key={axis.fullName}>
+                    <line
+                      x1={radarCx}
+                      y1={radarCy}
+                      x2={outer.x}
+                      y2={outer.y}
+                      stroke="#e2e8f0"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={outer.x + axis.dx}
+                      y={outer.y + axis.dy}
+                      textAnchor={axis.textAnchor}
+                      dominantBaseline="middle"
+                      fontSize="11"
+                      fontWeight="500"
+                      fill="#64748b"
+                    >
+                      {axis.name}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Shaded Blue Evidence Polygon */}
+              <polygon
+                points={radarPolygonPoints}
+                fill="rgba(59, 130, 246, 0.16)"
+                stroke="#3b82f6"
+                strokeWidth="2"
+              />
+
+              {/* Marker Circles on Vertices */}
+              {actualSkills.map((skill, idx) => {
+                const ratio = Math.max(0.06, skill.score / 100);
+                const coords = getRadarCoords(idx, ratio);
+                return (
+                  <circle
+                    key={skill.id || skill.name}
+                    cx={coords.x}
+                    cy={coords.y}
+                    r="4"
+                    fill="#3b82f6"
+                    stroke="#ffffff"
+                    strokeWidth="1.5"
+                  />
+                );
+              })}
+            </svg>
           </div>
-          {assessmentState.loading ? <p style={chartMutedStyle}>Loading score history…</p>
-            : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : !selectedScoreGroup ? <p style={{ ...chartMutedStyle, margin: 0 }}>Score history will appear after a submitted assessment with a score and submission date.</p>
-            : <>
-              {selectedScoreGroup.assessmentIds.length > 1 && <p style={{ color: 'var(--color-warning)', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>Recorded scores from regenerated versions of this quiz. The versions may differ, so this is not evidence of improvement.</p>}
-              <ScoreTrendChart points={selectedScoreGroup.points} />
-            </>}
-        </article>
-      </section>
+        </div>
 
-      <section aria-label="Assessment and roadmap progress" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem', alignItems: 'stretch' }}>
-        <article className="cockpit-panel" style={chartPanelStyle}>
-          <h2 style={chartTitleStyle}>Attempt status</h2>
-          {assessmentState.loading ? <p style={chartMutedStyle}>Loading attempt statuses…</p>
-            : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : <AttemptStatusDonut counts={statusCounts} />}
-        </article>
-        <article className="cockpit-panel" style={chartPanelStyle}>
-          <h2 style={chartTitleStyle}>Roadmap progress</h2>
-          {roadmapState.loading ? <p style={chartMutedStyle}>Loading roadmap progress…</p>
-            : roadmapState.error ? <p role="alert" style={{ ...mutedStyle, color: 'var(--color-error)' }}>{roadmapState.error}</p>
-            : !roadmap ? <p style={{ ...chartMutedStyle, margin: 0 }}>No active roadmap is available yet.</p>
-            : <>
-              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', margin: '0 0 0.6rem', overflowWrap: 'anywhere' }}>{roadmap.targetRole || goal?.targetRole || 'Active roadmap'}</p>
-              <p style={{ ...chartMutedStyle, marginBottom: '0.6rem' }}>
-                {completion === null ? 'No checklist activities' : `${completedCount} of ${totalCount} activities · ${completion}%`}
-              </p>
-              {completion !== null && <div role="progressbar" aria-label="Roadmap completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion} title={`${completedCount} of ${totalCount} roadmap activities completed`} style={{ height: '10px', background: 'var(--color-bg-alt)', borderRadius: '99px', overflow: 'hidden' }}>
-                <div style={{ width: `${completion}%`, height: '100%', background: 'var(--gradient-hero)', borderRadius: 'inherit' }} />
-              </div>}
-              {subtopics.length > 0 && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 190px), 1fr))', gap: '0.55rem', marginTop: '0.85rem' }}>
-                {subtopics.map((subtopic) => {
-                  const count = subtopic.checklist.length;
-                  const done = subtopic.checklist.filter((item) => item.completed).length;
-                  return <div key={subtopic.id} title={`${subtopic.title}: ${done} of ${count} activities completed`} style={{ minWidth: 0, padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', background: 'var(--color-surface-hover)' }}>
-                    <strong style={{ display: 'block', color: 'var(--color-text-primary)', fontSize: '0.8rem', overflowWrap: 'anywhere' }}>{subtopic.title}</strong>
-                    <span style={{ color: 'var(--color-text-muted)', fontSize: '0.74rem' }}>{count === 0 ? 'No activities' : `${done}/${count} complete`}</span>
-                  </div>;
-                })}
-              </div>}
-            </>}
-        </article>
-      </section>
+        {/* Right Card: Confidence score */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '1.75rem 2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.75rem 0' }}>
+              Confidence score
+            </h2>
 
-      <section aria-label="Skill comparison" className="cockpit-panel" style={chartPanelStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <div>
-              <h2 style={chartTitleStyle}>Skill comparison</h2>
-              <p style={{ ...chartMutedStyle, marginBottom: 0 }}>Scores from one submitted attempt</p>
+            <div style={{ fontSize: '3.25rem', fontWeight: 800, color: '#2563eb', lineHeight: 1.1, marginBottom: '0.4rem' }}>
+              {overallConfidence}%
             </div>
-            {submittedAttempts.length > 1 && <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
-              Attempt&nbsp;
-              <select aria-label="Choose submitted attempt for skill comparison" value={selectedSkillAttempt?._id ?? ''} onChange={(event) => setSelectedSkillAttemptId(event.target.value)} style={{ maxWidth: '220px', padding: '0.45rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}>
-                {submittedAttempts.map((attempt) => <option key={attempt._id} value={attempt._id}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(attempt._id) ?? 'number unavailable'} · {formatDate(attempt.submittedAt)}</option>)}
-              </select>
-            </label>}
+
+            <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
+              AI confidence in these levels based on {evidencePiecesCount} pieces of evidence collected.
+            </p>
           </div>
-          {assessmentState.loading ? <p style={chartMutedStyle}>Loading skill results…</p>
-            : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : !selectedSkillAttempt ? <p style={{ ...chartMutedStyle, margin: 0 }}>Submit an assessment with skill-specific results to compare skills.</p>
-            : <>
-              <p title={formatDate(selectedSkillAttempt.submittedAt)} style={{ color: 'var(--color-text-primary)', fontSize: '0.84rem', fontWeight: 700, margin: '0.8rem 0 0.9rem', overflowWrap: 'anywhere' }}>
-                {assessmentTitles[selectedSkillAttempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(selectedSkillAttempt._id) ?? 'number unavailable'} · {formatDate(selectedSkillAttempt.submittedAt)}
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem', alignItems: 'start' }}>
-                <div style={{ minWidth: 0 }}>
-                  <h3 style={{ ...chartTitleStyle, fontSize: '0.9rem', marginBottom: '0.55rem' }}>Radar</h3>
-                  <SkillRadarChart skills={selectedRadarSkills} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <h3 style={{ ...chartTitleStyle, fontSize: '0.9rem', marginBottom: '0.55rem' }}>Scores by skill</h3>
-                  <SkillScoreBars skills={selectedAttemptSkills} />
-                </div>
+
+          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+              <span style={{ color: '#64748b' }}>Sources</span>
+              <strong style={{ color: '#0f172a', fontWeight: 600 }}>Quizzes · Roadmap · Projects</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+              <span style={{ color: '#64748b' }}>Last updated</span>
+              <strong style={{ color: '#0f172a', fontWeight: 600 }}>{lastUpdatedLabel}</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
+              <span style={{ color: '#64748b' }}>Gaps flagged</span>
+              <strong style={{ color: '#0f172a', fontWeight: 600 }}>{criticalGapsCount} critical</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Bottom 4-Column Grid of 8 Skill Cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '1rem',
+        }}
+      >
+        {actualSkills.map((skill) => (
+          <div
+            key={skill.id || skill.name}
+            style={{
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: '16px',
+              padding: '1.25rem 1.4rem',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '136px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <span style={{ color: '#64748b', fontSize: '0.775rem', fontWeight: 500 }}>
+                  {skill.category}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    color: skill.trend.startsWith('+') ? '#059669' : skill.trend.startsWith('-') ? '#dc2626' : '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.2rem',
+                  }}
+                >
+                  {skill.trend.startsWith('+') ? '↗ ' : skill.trend.startsWith('-') ? '↘ ' : ''}{skill.trend}
+                </span>
               </div>
-            </>}
-      </section>
 
-      <section aria-label="Improvement between attempts">
-        <article className="cockpit-panel" style={chartPanelStyle}>
-          <h2 style={chartTitleStyle}>Improvement between attempts</h2>
-          {assessmentState.loading ? <p style={chartMutedStyle}>Loading comparable results…</p>
-            : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
-            : improvements.length === 0 ? <p style={{ ...chartMutedStyle, margin: 0 }}>{getSkillImprovementEmptyMessage(attempts, assessmentMetadata)}</p>
-            : <div style={{ display: 'grid', gap: '0.7rem' }}>
-              {improvements.map((improvement) => <div key={improvement.key} style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-md)', background: 'var(--color-surface-hover)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
-                  <strong style={{ color: 'var(--color-text-primary)', fontSize: '0.84rem' }}>{improvement.skillName}</strong>
-                  <strong aria-label={`${improvement.changePoints > 0 ? 'Increase' : improvement.changePoints < 0 ? 'Decrease' : 'No change'} of ${Math.abs(improvement.changePoints)} percentage points`} style={{ color: improvement.changePoints > 0 ? 'var(--color-success)' : improvement.changePoints < 0 ? 'var(--color-error)' : 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-                    {improvement.changePoints > 0 ? '+' : ''}{improvement.changePoints} pp
-                  </strong>
-                </div>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.76rem', margin: '0.25rem 0 0' }}>{improvement.assessmentTitle} · {improvement.comparisonLabel}: {improvement.earlierScore}% → {improvement.laterScore}% · {formatDate(improvement.earlierDate)} to {formatDate(improvement.laterDate)}</p>
-              </div>)}
-            </div>}
-        </article>
-      </section>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.85rem 0' }}>
+                {skill.name}
+              </h3>
+            </div>
 
-      <section aria-label="Latest skill results" className="cockpit-panel" style={{ ...sectionStyle, padding: '1rem 1.25rem' }}>
-        <h2 style={{ ...chartTitleStyle, marginBottom: '0.75rem' }}>Latest skill results</h2>
-        {assessmentState.loading ? <p style={mutedStyle}>Loading assessment scores…</p>
-          : assessmentState.error ? <p role="alert" style={{ ...mutedStyle, color: '#b91c1c' }}>{assessmentState.error}</p>
-          : skillHistory.length === 0 ? <p style={mutedStyle}>No submitted skill-specific assessment results yet.</p>
-          : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: '0.55rem' }}>
-            {skillHistory.map(({ skillId, entries }) => {
-              const latest = entries[0];
-              const mappedSubtopic = subtopicsById.get(skillId);
-              const label = latest.result.skillName || mappedSubtopic?.title || 'Unnamed assessment skill';
-              return (
-                <article key={skillId} style={{ minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.7rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-md)', padding: '0.65rem 0.75rem', background: 'var(--color-surface-hover)' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <strong style={{ display: 'block', color: 'var(--color-text-primary)', fontSize: '0.84rem', overflowWrap: 'anywhere' }}>{label}</strong>
-                    <span title={mappedSubtopic?.title || 'No matching roadmap subtopic'} className={`tech-badge ${mappedSubtopic ? 'tech-badge-emerald' : 'tech-badge-indigo'}`} style={{ display: 'inline-block', marginTop: '0.3rem', fontSize: '0.65rem' }}>
-                      {mappedSubtopic ? 'Roadmap match' : 'Unmapped'}
-                    </span>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '0.65rem' }}>
+                <strong style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>
+                  {skill.score}
+                </strong>
+                <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#94a3b8', marginLeft: '0.35rem' }}>
+                  / 100
+                </span>
+              </div>
+
+              <div style={{ width: '100%', height: '7px', background: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${skill.score}%`,
+                    height: '100%',
+                    background: '#2563eb',
+                    borderRadius: '9999px',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 6. Expandable Historical Quiz Attempts & Deep Progress Section */}
+      <div style={{ marginTop: '0.5rem' }}>
+        <button
+          type="button"
+          onClick={() => setShowAdvancedHistory(!showAdvancedHistory)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            background: '#ffffff',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '1rem 1.5rem',
+            cursor: 'pointer',
+            color: '#0f172a',
+            fontWeight: 600,
+            fontSize: '0.925rem',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <span style={{ color: '#2563eb' }}>●</span>
+            <span>Historical Assessment Attempts & Progress History ({attempts.length} attempts recorded)</span>
+          </div>
+          {showAdvancedHistory ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </button>
+
+        {showAdvancedHistory && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }} className="animate-reveal">
+            {/* Career Goal & Refresh Bar */}
+            <section style={{ ...sectionStyle, padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.8rem' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 0.2rem' }}>Career goal</p>
+                <strong style={{ color: 'var(--color-text-primary)', fontSize: '1rem', overflowWrap: 'anywhere' }}>
+                  {goalState.loading ? 'Loading…' : goalState.error ? 'Goal unavailable' : goal?.targetRole || 'No active goal'}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span title="Distinct exact skill IDs with submitted assessment results" style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', padding: '0.45rem 0.7rem', border: '1px solid var(--color-border)', borderRadius: '999px', background: 'var(--color-surface-hover)' }}>
+                  <strong style={{ color: 'var(--color-primary)' }}>{assessmentState.loading || assessmentState.error ? '—' : skillsWithResults}</strong> skills with results
+                </span>
+                <Button type="button" variant="secondary" onClick={() => setRefreshKey((key) => key + 1)} style={{ width: 'auto' }}>
+                  <RefreshCw size={15} style={{ marginRight: '0.4rem' }} /> Refresh
+                </Button>
+              </div>
+            </section>
+
+            {/* Score History */}
+            <section aria-label="Score history" style={{ display: 'grid', minWidth: 0 }}>
+              <article style={chartPanelStyle}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <h2 style={chartTitleStyle}>Score history</h2>
+                    <p title="Assessment percentages describe submitted quiz results, not validated proficiency levels." style={{ ...chartMutedStyle, marginBottom: '0.75rem' }}>Submitted scores · grouped by quiz</p>
                   </div>
-                  <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                    <strong style={{ color: 'var(--color-primary)', fontSize: '1.15rem', lineHeight: 1.2 }}>
-                      {typeof latest.result.percentage === 'number' ? `${latest.result.percentage}%` : 'Score unavailable'}
-                    </strong>
-                    <span title={formatDate(latest.attempt.submittedAt)} style={{ display: 'block', color: 'var(--color-text-muted)', fontSize: '0.7rem', marginTop: '0.15rem' }}>{formatDate(latest.attempt.submittedAt)} · {entries.length} result{entries.length === 1 ? '' : 's'}</span>
-                  </div>
-                </article>
-              );
-            })}
-          </div>}
-      </section>
-
-      <section className="cockpit-panel" style={sectionStyle}>
-        <h2 style={{ color: '#0f172a', fontSize: '1.1rem', margin: '0 0 1rem' }}>Assessment attempt history</h2>
-        {assessmentState.loading ? <p style={mutedStyle}>Loading attempt history…</p>
-          : assessmentState.error ? <p role="alert" style={{ ...mutedStyle, color: '#b91c1c' }}>{assessmentState.error}</p>
-          : attemptHistory.length === 0 ? <p style={mutedStyle}>No assessment attempts yet.</p>
-          : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {attemptHistory.map((attempt) => {
-              const score = typeof attempt.percentage === 'number' ? attempt.percentage : attempt.score;
-              return <div key={attempt._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.45rem', padding: '0.65rem 0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
-                <div style={{ minWidth: 0, flex: '1 1 250px' }}>
-                  <strong style={{ color: '#0f172a', overflowWrap: 'anywhere' }}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(attempt._id) ?? ''}</strong>
-                  <p style={{ ...mutedStyle, marginTop: '0.2rem' }}>{formatAttemptStatus(attempt.status)} · {formatDate(attempt.submittedAt ?? attempt.startedAt)}</p>
+                  {scoreHistoryGroups.length > 1 && (
+                    <label style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>
+                      Quiz&nbsp;
+                      <select aria-label="Choose quiz score history" value={selectedScoreGroup?.key ?? ''} onChange={(event) => setSelectedScoreGroupKey(event.target.value)} style={{ maxWidth: '220px', padding: '0.45rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', color: 'var(--color-text-primary)', background: 'var(--color-surface)' }}>
+                        {scoreHistoryGroups.map((group) => <option key={group.key} value={group.key}>{group.label}</option>)}
+                      </select>
+                    </label>
+                  )}
                 </div>
-                <strong style={{ color: '#4f46e5' }}>{attempt.status !== 'SUBMITTED' ? 'No submitted score' : typeof score === 'number' ? `${score}% overall` : 'Overall score unavailable'}</strong>
-                {attempt.status === 'SUBMITTED' && !!attempt.skillPerformance?.length && <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', width: '100%' }}>
-                  {attempt.skillPerformance.map((result) => {
-                    const mappedSubtopic = subtopicsById.get(result.skillId);
-                    return <span key={result.skillId} style={{ minWidth: 0, overflowWrap: 'anywhere', border: '1px solid #e2e8f0', borderRadius: '999px', padding: '0.25rem 0.65rem', color: '#334155', fontSize: '0.8rem', background: '#fff' }}>
-                      {mappedSubtopic?.title || result.skillName || 'Unnamed skill'} · {typeof result.percentage === 'number' ? `${result.percentage}%` : 'score unavailable'}{mappedSubtopic ? '' : ' · unmapped'}
-                    </span>;
+                {assessmentState.loading ? <p style={chartMutedStyle}>Loading score history…</p>
+                  : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
+                  : !selectedScoreGroup ? <p style={{ ...chartMutedStyle, margin: 0 }}>Score history will appear after a submitted assessment with a score and submission date.</p>
+                  : <>
+                    {selectedScoreGroup.assessmentIds.length > 1 && <p style={{ color: 'var(--color-warning)', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>Recorded scores from regenerated versions of this quiz. The versions may differ, so this is not evidence of improvement.</p>}
+                    <ScoreTrendChart points={selectedScoreGroup.points} />
+                  </>}
+              </article>
+            </section>
+
+            {/* Attempt Status & Roadmap Progress */}
+            <section aria-label="Assessment and roadmap progress" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1rem', alignItems: 'stretch' }}>
+              <article style={chartPanelStyle}>
+                <h2 style={chartTitleStyle}>Attempt status</h2>
+                {assessmentState.loading ? <p style={chartMutedStyle}>Loading attempt statuses…</p>
+                  : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
+                  : <AttemptStatusDonut counts={statusCounts} />}
+              </article>
+              <article style={chartPanelStyle}>
+                <h2 style={chartTitleStyle}>Roadmap progress</h2>
+                {roadmapState.loading ? <p style={chartMutedStyle}>Loading roadmap progress…</p>
+                  : roadmapState.error ? <p role="alert" style={{ ...mutedStyle, color: 'var(--color-error)' }}>{roadmapState.error}</p>
+                  : !roadmap ? <p style={{ ...chartMutedStyle, margin: 0 }}>No active roadmap is available yet.</p>
+                  : <>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', margin: '0 0 0.6rem', overflowWrap: 'anywhere' }}>{roadmap.targetRole || goal?.targetRole || 'Active roadmap'}</p>
+                    <p style={{ ...chartMutedStyle, marginBottom: '0.6rem' }}>
+                      {completion === null ? 'No checklist activities' : `${completedCount} of ${totalCount} activities · ${completion}%`}
+                    </p>
+                    {completion !== null && (
+                      <div role="progressbar" aria-label="Roadmap completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completion} title={`${completedCount} of ${totalCount} roadmap activities completed`} style={{ height: '10px', background: 'var(--color-bg-alt)', borderRadius: '99px', overflow: 'hidden' }}>
+                        <div style={{ width: `${completion}%`, height: '100%', background: '#2563eb', borderRadius: 'inherit' }} />
+                      </div>
+                    )}
+                    {subtopics.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 190px), 1fr))', gap: '0.55rem', marginTop: '0.85rem' }}>
+                        {subtopics.map((subtopic) => {
+                          const count = subtopic.checklist.length;
+                          const done = subtopic.checklist.filter((item) => item.completed).length;
+                          return (
+                            <div key={subtopic.id} title={`${subtopic.title}: ${done} of ${count} activities completed`} style={{ minWidth: 0, padding: '0.55rem 0.65rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-sm)', background: 'var(--color-surface-hover)' }}>
+                              <strong style={{ display: 'block', color: 'var(--color-text-primary)', fontSize: '0.8rem', overflowWrap: 'anywhere' }}>{subtopic.title}</strong>
+                              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.74rem' }}>{count === 0 ? 'No activities' : `${done}/${count} complete`}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>}
+              </article>
+            </section>
+
+            {/* Improvement Between Attempts */}
+            <section aria-label="Improvement between attempts">
+              <article style={chartPanelStyle}>
+                <h2 style={chartTitleStyle}>Improvement between attempts</h2>
+                {assessmentState.loading ? <p style={chartMutedStyle}>Loading comparable results…</p>
+                  : assessmentState.error ? <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{assessmentState.error}</p>
+                  : improvements.length === 0 ? <p style={{ ...chartMutedStyle, margin: 0 }}>{getSkillImprovementEmptyMessage(attempts, assessmentMetadata)}</p>
+                  : <div style={{ display: 'grid', gap: '0.7rem' }}>
+                    {improvements.map((improvement) => (
+                      <div key={improvement.key} style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--border-radius-md)', background: 'var(--color-surface-hover)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                          <strong style={{ color: 'var(--color-text-primary)', fontSize: '0.84rem' }}>{improvement.skillName}</strong>
+                          <strong aria-label={`${improvement.changePoints > 0 ? 'Increase' : improvement.changePoints < 0 ? 'Decrease' : 'No change'} of ${Math.abs(improvement.changePoints)} percentage points`} style={{ color: improvement.changePoints > 0 ? 'var(--color-success)' : improvement.changePoints < 0 ? 'var(--color-error)' : 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+                            {improvement.changePoints > 0 ? '+' : ''}{improvement.changePoints} pp
+                          </strong>
+                        </div>
+                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.76rem', margin: '0.25rem 0 0' }}>{improvement.assessmentTitle} · {improvement.comparisonLabel}: {improvement.earlierScore}% → {improvement.laterScore}% · {formatDate(improvement.earlierDate)} to {formatDate(improvement.laterDate)}</p>
+                      </div>
+                    ))}
+                  </div>}
+              </article>
+            </section>
+
+            {/* Assessment Attempt History */}
+            <section style={sectionStyle}>
+              <h2 style={{ color: '#0f172a', fontSize: '1.1rem', margin: '0 0 1rem', fontWeight: 800 }}>Assessment attempt history</h2>
+              {assessmentState.loading ? <p style={mutedStyle}>Loading attempt history…</p>
+                : assessmentState.error ? <p role="alert" style={{ ...mutedStyle, color: '#b91c1c' }}>{assessmentState.error}</p>
+                : attemptHistory.length === 0 ? <p style={mutedStyle}>No assessment attempts yet.</p>
+                : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {attemptHistory.map((attempt) => {
+                    const score = typeof attempt.percentage === 'number' ? attempt.percentage : attempt.score;
+                    return (
+                      <div key={attempt._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.45rem', padding: '0.65rem 0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
+                        <div style={{ minWidth: 0, flex: '1 1 250px' }}>
+                          <strong style={{ color: '#0f172a', overflowWrap: 'anywhere' }}>{assessmentTitles[attempt.assessmentId] || 'Assessment attempt'} · attempt {attemptNumbers.get(attempt._id) ?? ''}</strong>
+                          <p style={{ ...mutedStyle, marginTop: '0.2rem' }}>{formatAttemptStatus(attempt.status)} · {formatDate(attempt.submittedAt ?? attempt.startedAt)}</p>
+                        </div>
+                        <strong style={{ color: '#2563eb' }}>{attempt.status !== 'SUBMITTED' ? 'No submitted score' : typeof score === 'number' ? `${score}% overall` : 'Overall score unavailable'}</strong>
+                        {attempt.status === 'SUBMITTED' && !!attempt.skillPerformance?.length && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', width: '100%' }}>
+                            {attempt.skillPerformance.map((result) => {
+                              const mappedSubtopic = subtopicsById.get(result.skillId);
+                              return (
+                                <span key={result.skillId} style={{ minWidth: 0, overflowWrap: 'anywhere', border: '1px solid #e2e8f0', borderRadius: '999px', padding: '0.25rem 0.65rem', color: '#334155', fontSize: '0.8rem', background: '#fff' }}>
+                                  {mappedSubtopic?.title || result.skillName || 'Unnamed skill'} · {typeof result.percentage === 'number' ? `${result.percentage}%` : 'score unavailable'}{mappedSubtopic ? '' : ' · unmapped'}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
                   })}
                 </div>}
-              </div>;
-            })}
-          </div>}
-      </section>
+            </section>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useProfile } from '../context/ProfileContext';
 import { Button } from '../components/Button';
 import { Alert } from '../components/Alert';
 import { SidebarLayout } from '../components/SidebarLayout';
@@ -13,7 +12,6 @@ import { RoadmapAssessmentExperience } from '../components/RoadmapAssessmentExpe
 import { SkillTrackingView } from '../components/SkillTrackingView';
 import { ProjectIntelligenceView } from '../components/ProjectIntelligenceView';
 import {
-  User as UserIcon,
   Briefcase,
   FileText,
   Upload,
@@ -23,8 +21,6 @@ import {
   Calendar,
   Building,
   Eye,
-  Activity,
-  Terminal,
   Compass,
   Building2,
   FolderGit2,
@@ -47,8 +43,6 @@ interface GoalData {
 
 export function DashboardPage() {
   const { accessToken } = useAuth();
-  const { profile } = useProfile();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tabParam = (searchParams.get('tab') as 'dashboard' | 'assessment' | 'roadmap' | 'interview' | 'digital-twin' | 'resume' | 'career-goals' | 'skill-tracking' | 'projects') || 'dashboard';
@@ -179,90 +173,7 @@ export function DashboardPage() {
           <RoadmapAssessmentExperience />
         )}
 
-        {/* Technical Header Banner */}
-        <div
-          className="cockpit-panel animate-reveal"
-          style={{
-            padding: '1.75rem 2rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1.25rem',
-            background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(8, 145, 178, 0.04) 100%)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: 'var(--gradient-hero)',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '1.25rem',
-                flexShrink: 0,
-                boxShadow: 'var(--shadow-glow-indigo)',
-                overflow: 'hidden',
-              }}
-            >
-              {profile?.profilePictureUrl ? (
-                <img
-                  src={profile.profilePictureUrl}
-                  alt={profile.fullName || 'User'}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                profile?.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'
-              )}
-            </div>
 
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-                <span className="tech-badge tech-badge-indigo">
-                  <Terminal size={12} /> INTERVIEW COCKPIT v1.0
-                </span>
-                <span className="tech-badge tech-badge-emerald">
-                  <Activity size={12} className="animate-pulse-glow" /> SYSTEM ACTIVE
-                </span>
-              </div>
-              <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
-                {activeTab === 'assessment'
-                  ? 'Assessment Studio'
-                  : activeTab === 'digital-twin'
-                  ? 'Career Digital Twin Engine'
-                  : activeTab === 'roadmap'
-                  ? 'Personalized AI Roadmap'
-                  : activeTab === 'resume'
-                  ? 'Resume Foundation Center'
-                  : activeTab === 'career-goals'
-                  ? 'Career Goals & Timeline'
-                  : activeTab === 'projects'
-                  ? 'Project Intelligence'
-                  : activeTab === 'skill-tracking'
-                  ? 'Skill Tracking'
-                  : 'Interview Command Center'}
-              </h1>
-              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                {activeTab === 'projects'
-                  ? <>GitHub repository synchronization & portfolio intelligence for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>
-                  : activeTab === 'skill-tracking'
-                  ? <>Assessment results and roadmap activity for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>
-                  : <>Autonomous technical interview preparation & telemetry engine for <strong style={{ color: '#4f46e5' }}>{profile?.fullName || 'User'}</strong></>}
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Button onClick={() => navigate('/profile')} variant="secondary" style={{ width: 'auto' }}>
-              <UserIcon size={16} style={{ marginRight: '0.5rem' }} /> Developer Profile
-            </Button>
-          </div>
-        </div>
 
         {activeTab === 'skill-tracking' && <SkillTrackingView accessToken={accessToken} />}
 
@@ -276,33 +187,33 @@ export function DashboardPage() {
         {/* AI Learning Roadmap CTA Banner (Visible on Dashboard Overview) */}
         {activeTab === 'dashboard' && (
           <div
-            className="cockpit-panel animate-reveal"
             style={{
-              padding: '1.5rem 1.75rem',
+              padding: '1.75rem',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
               gap: '1.25rem',
-              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%)',
-              border: '1px solid rgba(79, 70, 229, 0.25)',
-              borderRadius: 'var(--border-radius-md)',
+              background: '#ffffff',
+              border: '1.5px solid #e2e8f0',
+              borderRadius: '16px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
             }}
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                <span className="tech-badge tech-badge-indigo" style={{ fontSize: '0.7rem' }}>
-                  <Sparkles size={11} /> AI LEARNING ENGINE
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                <span className="alex-pill alex-pill-blue" style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem' }}>
+                  <Sparkles size={11} style={{ display: 'inline', marginRight: '4px' }} /> AI LEARNING ENGINE
                 </span>
-                <span className="tech-badge tech-badge-emerald" style={{ fontSize: '0.7rem' }}>
+                <span className="alex-pill alex-pill-slate" style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem' }}>
                   STEP-BY-STEP CURRICULUM
                 </span>
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
                 Personalized Learning Roadmap & Milestone Tracker
               </h3>
-              <p style={{ color: '#475569', fontSize: '0.875rem', margin: '0.3rem 0 0' }}>
-                View your AI-generated curriculum, complete actionable tasks with documentation links, and track skill mastery.
+              <p style={{ color: '#475569', fontSize: '0.9rem', margin: '0.35rem 0 0', lineHeight: 1.5 }}>
+                Follow your tailored step-by-step curriculum, complete hands-on checklist items, and test your mastery.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
