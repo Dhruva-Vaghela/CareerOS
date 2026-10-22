@@ -439,6 +439,7 @@ export const DigitalTwinGraph: React.FC<DigitalTwinGraphProps> = ({ accessToken 
           onClose={() => setViewingPdfUrl(null)}
           pdfUrl={viewingPdfUrl}
           filename={viewingPdfFilename}
+          accessToken={accessToken}
         />
       )}
     </div>

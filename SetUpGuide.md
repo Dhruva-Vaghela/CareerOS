@@ -25,7 +25,7 @@ CareerOS AI is structured as a monorepo using npm workspaces (`apps/*`, `package
 
 Before starting, ensure your system meets the following requirements:
 
-1. **Node.js**: Version **>= 20.0.0** is required.
+1. **Node.js**: Version **20.16.0+ (below 21)** or **22.3.0+** is required.
    - Verify: `node -v`
    - *Tip (macOS/Linux)*: Use `nvm` (`nvm install 20 && nvm use 20`).
    - *Tip (Windows)*: Use `nvm-windows` or download from [nodejs.org](https://nodejs.org/).
@@ -93,6 +93,10 @@ DNS_SERVERS=1.1.1.1,8.8.8.8
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloud_key
 CLOUDINARY_API_SECRET=your_secret_key
+
+# Optional: local Tesseract English trained-data directory for offline resume OCR.
+# If omitted, Tesseract.js downloads English language data from jsDelivr on first OCR use.
+# RESUME_OCR_LANG_PATH=/path/to/tessdata
 
 # AI Configuration (Groq)
 AI_PROVIDER=groq
@@ -266,7 +270,7 @@ Run from the root directory:
   ```
 
 #### B. Node Version Mismatch
-- If `node -v` shows a version lower than `v20.0.0`:
+- If `node -v` is below `v20.16.0` (or is v21):
   ```bash
   nvm install 20
   nvm use 20

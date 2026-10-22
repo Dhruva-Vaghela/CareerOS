@@ -63,7 +63,7 @@ export class GroqProvider implements AIProvider {
               {
                 role: 'system' as const,
                 content:
-                  'You are an AI curriculum architect. You must output strictly valid JSON conforming to the requested schema. Do not output any commentary, markdown wrappers, or text outside the JSON object.',
+                  'You are a helpful assistant. Output strictly valid JSON matching the task instructions. Do not include commentary, markdown wrappers, or text outside the JSON object.',
               },
             ]
           : []),

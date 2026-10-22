@@ -31,6 +31,17 @@ export interface AITaskDefinition {
 }
 
 const PLACEHOLDER_RESPONSE_SCHEMA = { type: 'object' } as const;
+const RESUME_ANALYSIS_RESPONSE_SCHEMA = {
+  type: 'object',
+  required: ['summary', 'strengths', 'weaknesses', 'suggestions', 'recruiterFeedback'],
+  properties: {
+    summary: { type: 'string' },
+    strengths: { type: 'array', items: { type: 'object', required: ['title', 'evidence', 'whyItMatters'] } },
+    weaknesses: { type: 'array', items: { type: 'object', required: ['title', 'evidence', 'whyItMatters'] } },
+    suggestions: { type: 'array', items: { type: 'object', required: ['priority', 'issue', 'action', 'exampleRewrite'] } },
+    recruiterFeedback: { type: 'object', required: ['firstImpression', 'concerns', 'recommendation'] },
+  },
+} as const;
 const NO_RETRY: RetryStrategyMetadata = { name: 'NO_RETRY', maxAttempts: 1 };
 
 const TASK_DEFINITIONS: readonly AITaskDefinition[] = [
@@ -82,11 +93,11 @@ const TASK_DEFINITIONS: readonly AITaskDefinition[] = [
   },
   {
     id: 'RESUME_ANALYSIS',
-    description: 'Analyze a resume against career goals.',
+    description: 'Analyze a resume and produce evidence-based improvement and recruiter feedback.',
     modelAlias: 'DEFAULT_MODEL',
     promptTemplateName: 'resume-analysis',
     requiredContext: ['resume', 'careerGoal'],
-    responseSchema: PLACEHOLDER_RESPONSE_SCHEMA,
+    responseSchema: RESUME_ANALYSIS_RESPONSE_SCHEMA,
     retryStrategy: NO_RETRY,
   },
   {

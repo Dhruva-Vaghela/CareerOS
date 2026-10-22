@@ -9,6 +9,7 @@
     { "path": "./packages/event-bus" },
     { "path": "./packages/ai-client" },
     { "path": "./services/assessment" },
+    { "path": "./services/resume" },
   { "path": "./services/health-check" },
   { "path": "./services/interview" }
   ]
