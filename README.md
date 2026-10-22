@@ -113,7 +113,7 @@ Personalized Recommendations
 ### Current Implementation
 * **Architecture:** Monorepo with npm workspaces (`apps/*`, `packages/*`, `services/*`)
 * **Frontend:** React 18, TypeScript, Vite, TailwindCSS / Vanilla CSS
-* **Backend:** Node.js (>=20.0.0), Express, TypeScript (`tsx`)
+* **Backend:** Node.js (>=20.16.0 or >=22.3.0), Express, TypeScript (`tsx`)
 * **Database:** MongoDB Atlas / Local MongoDB via Mongoose
 * **AI Orchestration:** Groq Provider (`ai-client`) with structured outputs, prompt manager, retry engine, and telemetry
 * **File & Resume Storage:** Cloudinary (`services/resume`)

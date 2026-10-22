@@ -122,6 +122,7 @@ export enum ResumeStatus {
 export interface Resume {
   id: string;
   userId: string;
+  name?: string;
   publicId: string;
   secureUrl: string;
   filename: string;

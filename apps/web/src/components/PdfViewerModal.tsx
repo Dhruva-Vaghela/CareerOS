@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { X, ExternalLink, Download, FileText, AlertCircle } from 'lucide-react';
 
@@ -7,6 +7,7 @@ interface PdfViewerModalProps {
   onClose: () => void;
   pdfUrl: string;
   filename: string;
+  accessToken?: string | null;
 }
 
 export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
@@ -14,7 +15,47 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
   onClose,
   pdfUrl,
   filename,
+  accessToken,
 }) => {
+  const [displayUrl, setDisplayUrl] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen || !pdfUrl) return;
+    const controller = new AbortController();
+    let objectUrl: string | null = null;
+    setLoadError('');
+
+    const load = async () => {
+      if (pdfUrl.startsWith('/api/v1/resume/file/')) {
+        if (!accessToken) {
+          setLoadError('Sign in again to view this resume.');
+          return;
+        }
+        try {
+          const response = await fetch(pdfUrl, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error('Resume file could not be loaded.');
+          objectUrl = URL.createObjectURL(await response.blob());
+          setDisplayUrl(objectUrl);
+        } catch (error) {
+          if (!controller.signal.aborted) setLoadError(error instanceof Error ? error.message : 'Resume file could not be loaded.');
+        }
+      } else {
+        setDisplayUrl(pdfUrl);
+      }
+    };
+
+    setDisplayUrl(null);
+    void load();
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [isOpen, pdfUrl, accessToken]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -105,7 +146,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <a
-              href={pdfUrl}
+              href={displayUrl || undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-secondary"
@@ -115,7 +156,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
             </a>
 
             <a
-              href={pdfUrl}
+              href={displayUrl || undefined}
               download={filename}
               className="btn btn-secondary"
               style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', width: 'auto' }}
@@ -146,22 +187,24 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
 
         {/* Embedded Native Browser PDF Viewer */}
         <div style={{ flex: 1, position: 'relative', background: '#f1f5f9' }}>
-          {pdfUrl ? (
+          {displayUrl ? (
             <object
-              data={`${pdfUrl}#toolbar=1`}
+              data={`${displayUrl}#toolbar=1`}
               type="application/pdf"
               width="100%"
               height="100%"
               style={{ width: '100%', height: '100%', border: 'none', background: '#ffffff' }}
             >
               <iframe
-                src={`${pdfUrl}#toolbar=1`}
+                src={`${displayUrl}#toolbar=1`}
                 title="PDF Resume Preview"
                 width="100%"
                 height="100%"
                 style={{ border: 'none', width: '100%', height: '100%', background: '#ffffff' }}
               />
             </object>
+          ) : loadError ? (
+            <div role="alert" style={{ padding: '2rem', textAlign: 'center', color: '#b91c1c' }}>{loadError}</div>
           ) : (
             <div
               style={{
@@ -175,7 +218,7 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
               }}
             >
               <AlertCircle size={40} color="#ef4444" />
-              <p>No valid PDF document URL found.</p>
+              <p>Loading resume…</p>
             </div>
           )}
         </div>

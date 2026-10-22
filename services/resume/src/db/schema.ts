@@ -4,6 +4,7 @@ import { ResumeStatus } from '@careeros/shared-types';
 export interface IResumeDocument extends Document {
   _id: mongoose.Types.ObjectId;
   userId: string;
+  name: string;
   publicId: string;
   secureUrl: string;
   filename: string;
@@ -31,22 +32,71 @@ export interface IResumeVersionDocument extends Document {
 export interface IResumeExtractionDocument extends Document {
   _id: mongoose.Types.ObjectId;
   resumeId: string;
-  parsedContent: Record<string, unknown>;
+  version: number;
+  status: 'COMPLETED' | 'FAILED';
+  parsedContent: {
+    plainText?: string;
+    wordCount?: number;
+    pageCount?: number;
+    sections?: Record<string, string>;
+    source?: 'TEXT' | 'OCR';
+    layout?: 'SINGLE_COLUMN' | 'TABLE_OR_COLUMNS' | 'UNCERTAIN';
+    warnings?: string[];
+  };
+  errorMessage?: string;
   createdAt: Date;
 }
 
 export interface IResumeATSDocument extends Document {
   _id: mongoose.Types.ObjectId;
   resumeId: string;
+  version: number;
   score: number;
-  breakdown: Record<string, unknown>;
+  targetRole?: string;
+  jobDescription?: string;
+  hasJobDescription: boolean;
+  criteriaHash?: string;
+  breakdown: {
+    targeted: boolean;
+    matchedKeywords: string[];
+    missingKeywords: string[];
+    simulation?: {
+      stages: Array<{ id: string; label: string; status: 'PASS' | 'REVIEW' | 'FAIL'; detail: string }>;
+      decision: 'LIKELY_ADVANCE' | 'NEEDS_REVIEW' | 'LIKELY_FILTERED';
+      confidence: 'LOW' | 'MEDIUM';
+      requiredMatches: string[];
+      requiredGaps: string[];
+      preferredMatches: string[];
+      preferredGaps: string[];
+      explicitRules: Array<{ label: string; status: 'PASS' | 'REVIEW' | 'FAIL'; detail: string }>;
+      requirements: { requiredSkills: string[]; minimumYearsExperience?: number; requiredEducation?: string; requiredLocation?: string };
+      ranking: { required: { matched: number; total: number; percentage: number }; preferred: { matched: number; total: number; percentage: number }; general: { matched: number; total: number; percentage: number }; role: { matched: number; total: number; percentage: number }; weightedPercentage: number };
+    };
+    categories: Array<{
+      id: string;
+      label: string;
+      score: number;
+      maxScore: number;
+      findings: string[];
+    }>;
+  };
   createdAt: Date;
 }
 
 export interface IResumeSuggestionDocument extends Document {
   _id: mongoose.Types.ObjectId;
   resumeId: string;
-  suggestions: string[];
+  version: number;
+  status: 'COMPLETED' | 'FAILED';
+  targetRole?: string;
+  hasJobDescription: boolean;
+  inputHash: string;
+  summary?: string;
+  strengths: Array<{ title: string; evidence: string; whyItMatters: string }>;
+  weaknesses: Array<{ title: string; evidence: string; whyItMatters: string }>;
+  suggestions: Array<{ priority: 'HIGH' | 'MEDIUM' | 'LOW'; issue: string; action: string; exampleRewrite?: string }>;
+  recruiterFeedback?: { firstImpression: string; concerns: string[]; recommendation: string };
+  errorMessage?: string;
   createdAt: Date;
 }
 
@@ -61,6 +111,7 @@ export interface IResumeAuditDocument extends Document {
 const resumeSchema = new Schema<IResumeDocument>(
   {
     userId: { type: String, required: true, index: true },
+    name: { type: String, required: true, trim: true },
     publicId: { type: String, required: true },
     secureUrl: { type: String, required: true },
     filename: { type: String, required: true },
@@ -116,22 +167,43 @@ resumeVersionSchema.index({ resumeId: 1, version: -1 });
 
 const resumeExtractionSchema = new Schema<IResumeExtractionDocument>({
   resumeId: { type: String, required: true, index: true },
-  parsedContent: { type: Schema.Types.Mixed, required: true },
+  version: { type: Number, required: true },
+  status: { type: String, enum: ['COMPLETED', 'FAILED'], required: true },
+  parsedContent: { type: Schema.Types.Mixed, default: {} },
+  errorMessage: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
+resumeExtractionSchema.index({ resumeId: 1, version: 1 }, { unique: true });
 
 const resumeATSSchema = new Schema<IResumeATSDocument>({
   resumeId: { type: String, required: true, index: true },
+  version: { type: Number, required: true },
   score: { type: Number, required: true },
+  targetRole: { type: String },
+  jobDescription: { type: String },
+  hasJobDescription: { type: Boolean, required: true, default: false },
+  criteriaHash: { type: String },
   breakdown: { type: Schema.Types.Mixed, required: true },
   createdAt: { type: Date, default: Date.now },
 });
+resumeATSSchema.index({ resumeId: 1, version: 1, createdAt: -1 });
 
 const resumeSuggestionSchema = new Schema<IResumeSuggestionDocument>({
   resumeId: { type: String, required: true, index: true },
-  suggestions: { type: [String], default: [] },
+  version: { type: Number, required: true },
+  status: { type: String, enum: ['COMPLETED', 'FAILED'], required: true },
+  targetRole: { type: String },
+  hasJobDescription: { type: Boolean, required: true, default: false },
+  inputHash: { type: String, required: true },
+  summary: { type: String },
+  strengths: { type: [Schema.Types.Mixed], default: [] },
+  weaknesses: { type: [Schema.Types.Mixed], default: [] },
+  suggestions: { type: [Schema.Types.Mixed], default: [] },
+  recruiterFeedback: { type: Schema.Types.Mixed },
+  errorMessage: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
+resumeSuggestionSchema.index({ resumeId: 1, version: 1, createdAt: -1 });
 
 const resumeAuditSchema = new Schema<IResumeAuditDocument>({
   resumeId: { type: String, required: true, index: true },
@@ -165,6 +237,7 @@ export const ResumeAuditModel =
 export type ResumeRow = {
   id: string;
   userId: string;
+  name: string;
   publicId: string;
   secureUrl: string;
   filename: string;

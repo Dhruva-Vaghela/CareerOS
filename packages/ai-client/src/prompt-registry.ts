@@ -50,7 +50,7 @@ const PROMPT_DEFINITIONS: readonly PromptDefinition[] = [
     version: 'v1',
     templateFile: 'resume-analysis/v1.txt',
     variables: ['taskId', 'context', 'input'],
-    metadata: { status: 'placeholder' },
+    metadata: { status: 'active' },
   },
   {
     id: 'RECOMMENDATION_ENGINE',
