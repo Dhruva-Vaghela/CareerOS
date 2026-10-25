@@ -21,7 +21,7 @@ const suggestionSchema = z.object({
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']),
   issue: z.string().trim().min(1).max(240),
   action: z.string().trim().min(1).max(500),
-  exampleRewrite: z.string().max(600),
+  exampleRewrite: z.string().max(600).optional(),
 }).strict();
 
 const recruiterFeedbackSchema = z.object({

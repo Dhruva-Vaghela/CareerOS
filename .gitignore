@@ -50,4 +50,5 @@ coverage/
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+*.sw?services/resume/uploads/Rewamp/
+/services/resume/uploads/Rewamp/

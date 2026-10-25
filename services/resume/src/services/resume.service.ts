@@ -50,7 +50,7 @@ export class ResumeService {
     await this.getResume(userId, resumeId);
     const versions = await ResumeVersionModel.find({ resumeId }).sort({ version: -1 }).lean();
     return versions.map((version) => ({
-      id: version._id.toString(),
+      id: String(version._id),
       resumeId: version.resumeId,
       version: version.version,
       publicId: version.publicId,
@@ -67,7 +67,7 @@ export class ResumeService {
     const doc = await ResumeVersionModel.findOne({ resumeId, version }).lean();
     if (!doc) throw new NotFoundError('Resume version not found');
     return {
-      id: doc._id.toString(),
+      id: String(doc._id),
       resumeId: doc.resumeId,
       version: doc.version,
       publicId: doc.publicId,

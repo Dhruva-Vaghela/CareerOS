@@ -534,6 +534,16 @@ a:hover {
   .mobile-header {
     display: flex !important;
   }
+  .resume-center-split-grid,
+  .resume-two-col-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.resume-two-col-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
 }
 
 /* Accessibility: Reduced Motion */

@@ -188,6 +188,25 @@ const resumeATSSchema = new Schema<IResumeATSDocument>({
 });
 resumeATSSchema.index({ resumeId: 1, version: 1, createdAt: -1 });
 
+const strengthWeaknessSchema = new Schema(
+  {
+    title: { type: String, required: true },
+    evidence: { type: String, required: true },
+    whyItMatters: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const suggestionItemSchema = new Schema(
+  {
+    priority: { type: String, enum: ['HIGH', 'MEDIUM', 'LOW'], required: true },
+    issue: { type: String, required: true },
+    action: { type: String, required: true },
+    exampleRewrite: { type: String },
+  },
+  { _id: false }
+);
+
 const resumeSuggestionSchema = new Schema<IResumeSuggestionDocument>({
   resumeId: { type: String, required: true, index: true },
   version: { type: Number, required: true },
@@ -196,9 +215,9 @@ const resumeSuggestionSchema = new Schema<IResumeSuggestionDocument>({
   hasJobDescription: { type: Boolean, required: true, default: false },
   inputHash: { type: String, required: true },
   summary: { type: String },
-  strengths: { type: [Schema.Types.Mixed], default: [] },
-  weaknesses: { type: [Schema.Types.Mixed], default: [] },
-  suggestions: { type: [Schema.Types.Mixed], default: [] },
+  strengths: { type: [strengthWeaknessSchema], default: [] },
+  weaknesses: { type: [strengthWeaknessSchema], default: [] },
+  suggestions: { type: [suggestionItemSchema], default: [] },
   recruiterFeedback: { type: Schema.Types.Mixed },
   errorMessage: { type: String },
   createdAt: { type: Date, default: Date.now },
@@ -212,26 +231,28 @@ const resumeAuditSchema = new Schema<IResumeAuditDocument>({
   createdAt: { type: Date, default: Date.now },
 });
 
-export const ResumeModel =
-  mongoose.models.Resume || mongoose.model<IResumeDocument>('Resume', resumeSchema, 'Resumes');
+export const ResumeModel: mongoose.Model<IResumeDocument> =
+  (mongoose.models.Resume as mongoose.Model<IResumeDocument>) ||
+  mongoose.model<IResumeDocument>('Resume', resumeSchema, 'Resumes');
 
-export const ResumeVersionModel =
-  mongoose.models.ResumeVersion ||
+export const ResumeVersionModel: mongoose.Model<IResumeVersionDocument> =
+  (mongoose.models.ResumeVersion as mongoose.Model<IResumeVersionDocument>) ||
   mongoose.model<IResumeVersionDocument>('ResumeVersion', resumeVersionSchema, 'ResumeVersions');
 
-export const ResumeExtractionModel =
-  mongoose.models.ResumeExtraction ||
+export const ResumeExtractionModel: mongoose.Model<IResumeExtractionDocument> =
+  (mongoose.models.ResumeExtraction as mongoose.Model<IResumeExtractionDocument>) ||
   mongoose.model<IResumeExtractionDocument>('ResumeExtraction', resumeExtractionSchema, 'ResumeExtractions');
 
-export const ResumeATSModel =
-  mongoose.models.ResumeATS || mongoose.model<IResumeATSDocument>('ResumeATS', resumeATSSchema, 'ResumeATS');
+export const ResumeATSModel: mongoose.Model<IResumeATSDocument> =
+  (mongoose.models.ResumeATS as mongoose.Model<IResumeATSDocument>) ||
+  mongoose.model<IResumeATSDocument>('ResumeATS', resumeATSSchema, 'ResumeATS');
 
-export const ResumeSuggestionModel =
-  mongoose.models.ResumeSuggestion ||
+export const ResumeSuggestionModel: mongoose.Model<IResumeSuggestionDocument> =
+  (mongoose.models.ResumeSuggestion as mongoose.Model<IResumeSuggestionDocument>) ||
   mongoose.model<IResumeSuggestionDocument>('ResumeSuggestion', resumeSuggestionSchema, 'ResumeSuggestions');
 
-export const ResumeAuditModel =
-  mongoose.models.ResumeAudit ||
+export const ResumeAuditModel: mongoose.Model<IResumeAuditDocument> =
+  (mongoose.models.ResumeAudit as mongoose.Model<IResumeAuditDocument>) ||
   mongoose.model<IResumeAuditDocument>('ResumeAudit', resumeAuditSchema, 'ResumeAudits');
 
 export type ResumeRow = {
