@@ -1,0 +1,621 @@
+/* ==========================================================================
+   Career OS — Minimalist Sign-In Styles
+   Palette: White, pale lavender, soft blue, navy typography, violet gradients
+   ========================================================================== */
+
+.cos-signin-page {
+  min-height: 100vh;
+  position: relative;
+  background: 
+    radial-gradient(circle at 12% 18%, rgba(196, 181, 253, 0.28) 0%, transparent 40%),
+    radial-gradient(circle at 88% 80%, rgba(147, 197, 253, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 45% 95%, rgba(221, 214, 254, 0.3) 0%, transparent 50%),
+    linear-gradient(135deg, #fbfbfe 0%, #f4f6fc 50%, #eff2fa 100%);
+  color: #0f172a;
+  font-family: var(--font-family);
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Top Navigation Header
+   -------------------------------------------------------------------------- */
+.cos-signin-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 3.5rem;
+  z-index: 50;
+}
+
+.cos-back-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cos-back-home-link:hover {
+  color: #4f46e5;
+  background: #ffffff;
+  border-color: #cbd5e1;
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+/* --------------------------------------------------------------------------
+   Split-Screen Layout Container
+   -------------------------------------------------------------------------- */
+.cos-signin-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr;
+  align-items: center;
+  gap: 3.5rem;
+  max-width: 1360px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 6.5rem 3.5rem 4rem 3.5rem;
+  position: relative;
+  z-index: 10;
+}
+
+/* --------------------------------------------------------------------------
+   Left Content Section
+   -------------------------------------------------------------------------- */
+.cos-signin-left {
+  position: relative;
+  z-index: 10;
+  max-width: 540px;
+}
+
+.cos-signin-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #6366f1;
+  margin-bottom: 1.25rem;
+}
+
+.cos-signin-headline {
+  font-size: clamp(2.5rem, 4.4vw, 3.8rem);
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+}
+
+.cos-signin-gradient-word {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.cos-signin-subtext {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #475569;
+  margin-bottom: 2.25rem;
+  max-width: 480px;
+}
+
+/* Three Compact Feature Rows */
+.cos-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 460px;
+}
+
+.cos-feature-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 14px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease;
+}
+
+.cos-feature-row:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.cos-feature-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.cos-feature-title {
+  font-size: 0.975rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.15rem;
+}
+
+.cos-feature-desc {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   Abstract 3D Orbital Element (Beside & Behind Left Content)
+   -------------------------------------------------------------------------- */
+.cos-orbital-stage-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 45%;
+  transform: translate(-30%, -50%);
+  width: 580px;
+  height: 580px;
+  pointer-events: none;
+  z-index: 1;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.cos-orbital-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Circular glowing pedestal at the bottom */
+.cos-pedestal-glow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(167, 139, 250, 0.3) 0%, rgba(192, 132, 252, 0.12) 45%, transparent 70%);
+  filter: blur(20px);
+}
+
+.cos-pedestal-rim-1 {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) rotateX(68deg);
+  width: 440px;
+  height: 280px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(196, 181, 253, 0.6);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.7) 0%, rgba(237, 233, 254, 0.3) 60%, transparent 80%);
+  box-shadow: 0 0 35px rgba(167, 139, 250, 0.25);
+}
+
+.cos-pedestal-rim-2 {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%) rotateX(68deg);
+  width: 320px;
+  height: 200px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(167, 139, 250, 0.45);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85) 0%, rgba(224, 231, 255, 0.4) 60%, transparent 80%);
+}
+
+/* Translucent Glass Ring (Torus) */
+.cos-glass-ring-container {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotateY(-26deg) rotateX(18deg) rotateZ(-12deg);
+  width: 300px;
+  height: 300px;
+  transform-style: preserve-3d;
+  animation: floatRing 8s ease-in-out infinite;
+}
+
+.cos-glass-ring-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 15px 30px rgba(124, 58, 237, 0.18));
+}
+
+/* Central 4-Point Compass Star */
+.cos-central-star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90px;
+  height: 90px;
+  animation: pulseCenterStar 5s ease-in-out infinite;
+}
+
+.cos-star-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+}
+
+/* Softly Glowing Orbital Spheres */
+.cos-orbit-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 380px;
+  height: 160px;
+  transform: translate(-50%, -50%) rotate(-28deg);
+  border-radius: 50%;
+  border: 1px dashed rgba(167, 139, 250, 0.35);
+  pointer-events: none;
+}
+
+.cos-sphere {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+
+/* Sphere 1: Top-Right Violet Sphere */
+.cos-sphere-1 {
+  width: 26px;
+  height: 26px;
+  top: 22%;
+  right: 18%;
+  background: radial-gradient(circle at 35% 35%, #e9d5ff 0%, #a855f7 45%, #6b21a8 100%);
+  animation: floatSphereA 6s ease-in-out infinite;
+}
+
+/* Sphere 2: Center-Left Blue/Indigo Sphere */
+.cos-sphere-2 {
+  width: 22px;
+  height: 22px;
+  top: 58%;
+  left: 12%;
+  background: radial-gradient(circle at 35% 35%, #bfdbfe 0%, #3b82f6 50%, #1e3a8a 100%);
+  animation: floatSphereB 7s ease-in-out infinite;
+}
+
+/* Sphere 3: Lower-Right Pink/Violet Sphere */
+.cos-sphere-3 {
+  width: 20px;
+  height: 20px;
+  bottom: 24%;
+  right: 28%;
+  background: radial-gradient(circle at 35% 35%, #fbcfe8 0%, #ec4899 50%, #9d174d 100%);
+  animation: floatSphereC 6.5s ease-in-out infinite;
+}
+
+/* Sphere 4: Floating Soft Accent Sphere */
+.cos-sphere-4 {
+  width: 14px;
+  height: 14px;
+  top: 15%;
+  left: 35%;
+  background: radial-gradient(circle at 35% 35%, #ddd6fe 0%, #8b5cf6 60%, #4c1d95 100%);
+  animation: floatSphereA 8s ease-in-out infinite reverse;
+}
+
+@keyframes floatRing {
+  0%, 100% {
+    transform: translate(-50%, -50%) rotateY(-26deg) rotateX(18deg) rotateZ(-12deg) translateY(0px);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotateY(-22deg) rotateX(22deg) rotateZ(-9deg) translateY(-8px);
+  }
+}
+
+@keyframes pulseCenterStar {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05) rotate(1deg);
+  }
+}
+
+@keyframes floatSphereA {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-9px) translateX(4px); }
+}
+
+@keyframes floatSphereB {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-7px) translateX(-3px); }
+}
+
+@keyframes floatSphereC {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(8px) translateX(3px); }
+}
+
+/* --------------------------------------------------------------------------
+   Right White Sign-In Card Panel
+   -------------------------------------------------------------------------- */
+.cos-signin-card {
+  max-width: 480px;
+  width: 100%;
+  justify-self: center;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 3.25rem 2.85rem;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 
+    0 25px 50px -12px rgba(15, 23, 42, 0.08),
+    0 0 1px 1px rgba(226, 232, 240, 0.6);
+  position: relative;
+  z-index: 20;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.cos-card-header {
+  margin-bottom: 2rem;
+}
+
+.cos-card-title {
+  font-size: 1.85rem;
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.4rem;
+}
+
+.cos-card-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Form Groups & Inputs */
+.cos-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+}
+
+.cos-field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.cos-field-label {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #1e293b;
+  margin-bottom: 0.45rem;
+}
+
+.cos-input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cos-input-leading-icon {
+  position: absolute;
+  left: 1.05rem;
+  color: #94a3b8;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.cos-text-input {
+  width: 100%;
+  padding: 0.82rem 1rem 0.82rem 2.75rem;
+  font-size: 0.935rem;
+  font-family: inherit;
+  color: #0f172a;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cos-text-input::placeholder {
+  color: #94a3b8;
+}
+
+.cos-text-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background-color: #ffffff;
+}
+
+.cos-text-input:focus + .cos-input-leading-icon,
+.cos-input-box:focus-within .cos-input-leading-icon {
+  color: #6366f1;
+}
+
+/* Password Toggle Icon */
+.cos-pw-toggle-btn {
+  position: absolute;
+  right: 0.85rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.cos-pw-toggle-btn:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.cos-forgot-link-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.45rem;
+}
+
+.cos-forgot-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6366f1;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.cos-forgot-link:hover {
+  color: #4338ca;
+  text-decoration: underline;
+}
+
+/* Submit Button */
+.cos-submit-btn {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #8b5cf6 100%);
+  color: #ffffff;
+  font-weight: 650;
+  font-size: 1rem;
+  padding: 0.85rem 1.65rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.32);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.cos-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 10px 28px rgba(79, 70, 229, 0.45);
+  filter: brightness(1.05);
+}
+
+.cos-submit-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.cos-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Footer Link */
+.cos-card-footer {
+  text-align: center;
+  margin-top: 1.75rem;
+  font-size: 0.885rem;
+  color: #64748b;
+}
+
+.cos-create-link {
+  color: #6366f1;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 0.3rem;
+  transition: color 0.2s ease;
+}
+
+.cos-create-link:hover {
+  color: #4338ca;
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Layout & Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .cos-signin-container {
+    gap: 2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  
+  .cos-orbital-stage-wrapper {
+    left: 40%;
+    width: 480px;
+    height: 480px;
+  }
+}
+
+@media (max-width: 900px) {
+  .cos-signin-header {
+    padding: 1.5rem 1.5rem;
+  }
+
+  .cos-signin-container {
+    grid-template-columns: 1fr;
+    padding: 6rem 1.25rem 3rem 1.25rem;
+    gap: 2.5rem;
+  }
+
+  .cos-signin-left {
+    max-width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cos-signin-subtext {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cos-features-list {
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .cos-orbital-stage-wrapper {
+    display: none;
+  }
+
+  .cos-signin-card {
+    padding: 2.5rem 1.75rem;
+    max-width: 440px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .cos-glass-ring-container,
+  .cos-central-star,
+  .cos-sphere-1,
+  .cos-sphere-2,
+  .cos-sphere-3,
+  .cos-sphere-4,
+  .cos-orbital-stage {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

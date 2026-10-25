@@ -7,6 +7,7 @@ import { Alert } from '../../components/Alert';
 import { StepIndicator } from '../../components/StepIndicator';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile } from '../../context/ProfileContext';
+import { OnboardingOrbitalBackground } from './OnboardingOrbitalBackground';
 import './OnboardingPage.css';
 
 const STEPS = [
@@ -298,6 +299,7 @@ export function OnboardingPage() {
 
   return (
     <div className="onboarding-layout">
+      <OnboardingOrbitalBackground />
       <div className="onboarding-container">
         <div className="onboarding-header">
           <h1 className="onboarding-title">Welcome to CareerOS</h1>
