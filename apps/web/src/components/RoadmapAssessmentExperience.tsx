@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Clock3, FileText, RefreshCw, Target, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +56,7 @@ export function RoadmapAssessmentExperience() {
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [difficulty, setDifficulty] = useState<'MEDIUM' | 'HARD'>('HARD');
@@ -64,6 +65,10 @@ export function RoadmapAssessmentExperience() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [questionIndex, setQuestionIndex] = useState(0);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const submissionLock = useRef(false);
+  const submitQuizRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     const controller = new AbortController();
@@ -156,6 +161,9 @@ export function RoadmapAssessmentExperience() {
     setAnswers({});
     setQuestionIndex(0);
     setResult(null);
+    setHasStarted(false);
+    setTimeRemaining(0);
+    submissionLock.current = false;
   };
 
   const generateQuiz = async (unit: QuizUnit) => {
@@ -186,15 +194,8 @@ export function RoadmapAssessmentExperience() {
       const body = await response.json();
       if (!response.ok) throw new Error(body.error?.message || 'Could not generate this quiz.');
       const generated = responseData<{ assessment: QuizAssessment }>(body).assessment;
-      const attemptResponse = await fetch(`/api/v1/assessments/${generated._id}/attempts`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const attemptBody = await attemptResponse.json();
-      if (!attemptResponse.ok) throw new Error(attemptBody.error?.message || 'Could not start this quiz.');
-      const attempt = responseData<{ attempt: { _id: string } }>(attemptBody).attempt;
       setAssessment(generated);
-      setAttemptId(attempt._id);
+      setTimeRemaining(generated.duration * 60);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not generate this quiz.');
     } finally {
@@ -202,8 +203,32 @@ export function RoadmapAssessmentExperience() {
     }
   };
 
-  const submitQuiz = async () => {
-    if (!assessment || !attemptId) return;
+  const startQuiz = async () => {
+    if (!assessment || isStarting) return;
+    setIsStarting(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/v1/assessments/${assessment._id}/attempts`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error?.message || 'Could not start this quiz.');
+      const attempt = responseData<{ attempt: { _id: string } }>(body).attempt;
+      setAttemptId(attempt._id);
+      setTimeRemaining(assessment.duration * 60);
+      setHasStarted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start this quiz.');
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const submitQuiz = async (confirm = true) => {
+    if (!assessment || !attemptId || submissionLock.current || result) return;
+    if (confirm && !window.confirm('Submit your quiz now? You cannot change your answers after submitting.')) return;
+    submissionLock.current = true;
     setIsSubmitting(true);
     setError('');
     try {
@@ -216,11 +241,29 @@ export function RoadmapAssessmentExperience() {
       if (!response.ok) throw new Error(body.error?.message || 'Could not submit this quiz.');
       setResult(responseData<{ result: QuizResult }>(body).result);
     } catch (err) {
+      submissionLock.current = false;
       setError(err instanceof Error ? err.message : 'Could not submit this quiz.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  submitQuizRef.current = () => submitQuiz(false);
+
+  useEffect(() => {
+    if (!hasStarted || !attemptId || result) return;
+    const timer = window.setInterval(() => {
+      setTimeRemaining((remaining) => {
+        if (remaining <= 1) {
+          window.clearInterval(timer);
+          void submitQuizRef.current();
+          return 0;
+        }
+        return remaining - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [hasStarted, attemptId, result]);
 
   const currentQuestion = assessment?.questions[questionIndex];
 
@@ -268,7 +311,7 @@ export function RoadmapAssessmentExperience() {
           <Button onClick={() => navigate('/dashboard?tab=roadmap')}>Open roadmap</Button>
         </section>
       ) : (
-        <section className="cockpit-panel" style={{ padding: '1.25rem' }}>
+        <section className="cockpit-panel" style={{ padding: '1.25rem', order: assessment || result ? 2 : 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#334155' }}>
             <Target size={17} color="#4f46e5" /> {quizUnits.length} assessment units from the active roadmap
           </div>
@@ -284,45 +327,66 @@ export function RoadmapAssessmentExperience() {
                 {!unit.isUnlocked && unit.type === 'MODULE_ASSESSMENT' && <span style={{ color: '#64748b', fontSize: '0.78rem' }}>Complete this module's checklist to unlock.</span>}
                 <Button onClick={() => void generateQuiz(unit)} disabled={isGenerating || !unit.isUnlocked} variant="secondary" style={{ width: '100%' }}>
                   <RefreshCw size={14} style={{ marginRight: '0.4rem' }} />
-                  {isGenerating ? 'Generating fresh set...' : unit.isUnlocked ? 'Generate fresh quiz' : 'Module not complete'}
+                  {isGenerating ? 'Generating quiz...' : unit.isUnlocked ? 'Generate Quiz' : 'Module not complete'}
                 </Button>
               </article>
             ))}
           </div>
         </section>
       )}
-      {assessment && !result && currentQuestion && (
-        <section className="cockpit-panel" style={{ padding: '1.5rem' }}>
+      {assessment && !hasStarted && !result && (
+        <section className="cockpit-panel" style={{ padding: '1.5rem', order: 1, border: '1px solid #c7d2fe', background: 'linear-gradient(135deg, #ffffff, #f5f7ff)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <span className="tech-badge tech-badge-emerald">ASSESSMENT READY</span>
+              <h3 style={{ margin: '0.65rem 0 0.4rem', color: '#0f172a', fontSize: '1.3rem' }}>{assessment.title}</h3>
+              <p style={{ margin: 0, color: '#475569' }}>Review the details, then start when you are ready.</p>
+            </div>
+            <button type="button" onClick={resetQuiz} style={{ border: 0, background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 600 }}>Close</button>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', margin: '1.25rem 0', color: '#334155' }}>
+            <span><strong>{assessment.totalQuestions}</strong> questions</span>
+            <span><strong>{assessment.duration}</strong> minutes</span>
+            <span>Multiple choice</span>
+          </div>
+          <p style={{ margin: '0 0 1.1rem', color: '#64748b' }}>Answer each question before the timer expires. Your answers are submitted when you finish or time runs out.</p>
+          <Button isLoading={isStarting} onClick={() => void startQuiz()}>Start Quiz</Button>
+        </section>
+      )}
+      {assessment && hasStarted && !result && currentQuestion && (
+        <section className="cockpit-panel" style={{ padding: '1.5rem', order: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <div>
               <span className="tech-badge tech-badge-emerald">{assessment.difficulty} · {assessment.type.replace('_', ' ')}</span>
               <h3 style={{ margin: '0.65rem 0 0', color: '#0f172a', fontSize: '1.25rem' }}>{assessment.title}</h3>
             </div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#475569' }}><Clock3 size={15} /> {assessment.duration} min</span>
+            <span role="timer" aria-live="off" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: timeRemaining <= 60 ? '#dc2626' : '#475569', fontWeight: 700 }}><Clock3 size={15} /> {`${Math.floor(timeRemaining / 60).toString().padStart(2, '0')}:${(timeRemaining % 60).toString().padStart(2, '0')}`}</span>
           </div>
           <p style={{ margin: '1.3rem 0 0.75rem', color: '#64748b', fontSize: '0.85rem' }}>Question {questionIndex + 1} of {assessment.questions.length} · {currentQuestion.topicName} · {currentQuestion.skillName}</p>
           <h4 style={{ margin: 0, color: '#0f172a', fontSize: '1.15rem', lineHeight: 1.5 }}>{currentQuestion.question}</h4>
           <div style={{ display: 'grid', gap: '0.65rem', marginTop: '1rem' }}>
             {currentQuestion.options.map((option) => (
-              <button key={option} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion.id]: option }))} style={{ textAlign: 'left', border: answers[currentQuestion.id] === option ? '1px solid #4f46e5' : '1px solid #dbe2ea', borderRadius: '8px', background: answers[currentQuestion.id] === option ? 'rgba(79,70,229,0.06)' : '#fff', color: '#0f172a', padding: '0.8rem 0.95rem', cursor: 'pointer', fontSize: '0.95rem' }}>
+              <button key={option} disabled={isSubmitting} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion.id]: option }))} style={{ textAlign: 'left', border: answers[currentQuestion.id] === option ? '1px solid #4f46e5' : '1px solid #dbe2ea', borderRadius: '8px', background: answers[currentQuestion.id] === option ? 'rgba(79,70,229,0.06)' : '#fff', color: '#0f172a', padding: '0.8rem 0.95rem', cursor: isSubmitting ? 'not-allowed' : 'pointer', fontSize: '0.95rem' }}>
                 {option}
               </button>
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
             <Button variant="secondary" disabled={questionIndex === 0} onClick={() => setQuestionIndex((index) => Math.max(0, index - 1))}>Previous</Button>
-            {questionIndex < assessment.questions.length - 1 ? <Button onClick={() => setQuestionIndex((index) => index + 1)}>Next</Button> : <Button isLoading={isSubmitting} onClick={() => void submitQuiz()}>Submit quiz</Button>}
+            <Button variant="secondary" disabled={questionIndex >= assessment.questions.length - 1} onClick={() => setQuestionIndex((index) => Math.min(assessment.questions.length - 1, index + 1))}>Next</Button>
+            <Button isLoading={isSubmitting} onClick={() => void submitQuiz()}>Submit Quiz</Button>
           </div>
         </section>
       )}
       {result && assessment && (
-        <section className="cockpit-panel" style={{ padding: '1.5rem' }}>
+        <section className="cockpit-panel" style={{ padding: '1.5rem', order: 1 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <div><div className="tech-badge tech-badge-emerald"><CheckCircle2 size={12} /> SCORED</div><h3 style={{ margin: '0.55rem 0 0', color: '#0f172a' }}>{assessment.title}</h3></div>
             <strong style={{ color: '#4f46e5', fontSize: '2rem' }}>{result.score}%</strong>
           </div>
+          <p style={{ color: '#475569' }}>Assessment complete. Your score is based on your submitted answers.</p>
           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', margin: '1rem 0', color: '#475569' }}>
-            <span>Correct: {result.correctAnswers}</span><span>Incorrect: {result.incorrectAnswers}</span><span>Unanswered: {result.unansweredQuestions}</span>
+            <span>Correct: {result.correctAnswers}</span><span>Incorrect: {result.incorrectAnswers}</span><span>Questions attempted: {assessment.totalQuestions - result.unansweredQuestions}</span><span>Total questions: {assessment.totalQuestions}</span>
           </div>
           <h4 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>Skill performance</h4>
           <div style={{ display: 'grid', gap: '0.5rem' }}>
@@ -345,7 +409,7 @@ export function RoadmapAssessmentExperience() {
               );
             })}
           </div>
-          <Button onClick={resetQuiz} style={{ marginTop: '1.25rem' }}>Done</Button>
+          <Button onClick={resetQuiz} style={{ marginTop: '1.25rem' }}>Retake Quiz</Button>
         </section>
       )}
     </div>
