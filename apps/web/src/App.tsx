@@ -11,6 +11,7 @@ import { OnboardingPage } from './pages/onboarding/OnboardingPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { GithubCallbackPage } from './pages/GithubCallbackPage';
+import { GoogleCallbackPage } from './pages/GoogleCallbackPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -138,6 +139,7 @@ function App() {
             } />
 
             <Route path="/auth/github/callback" element={<GithubCallbackPage />} />
+            <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
           </Routes>
         </Router>
       </ProfileProvider>

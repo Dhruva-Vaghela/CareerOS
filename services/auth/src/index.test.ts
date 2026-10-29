@@ -47,6 +47,8 @@ describe('Auth Service Integration Tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.user.email).toBe(testEmail.toLowerCase());
     expect(res.body.data.user.id).toBeDefined();
+    expect(res.body.data.accessToken).toBeDefined();
+    expect(res.body.data.refreshToken).toBeDefined();
   });
 
   it('should reject registration with existing email', async () => {

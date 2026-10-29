@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Button } from '../../components/Button';
@@ -78,13 +78,15 @@ export function OnboardingPage() {
   const { accessToken } = useAuth();
   const { updateLocalProfile } = useProfile();
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as { fullName?: string } | null;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Step 1: Basic Profile
-  const [fullName, setFullName] = useState('');
+  const [fullName, setFullName] = useState(locationState?.fullName || '');
   const [college, setCollege] = useState('');
   const [degree, setDegree] = useState('');
   const [branch, setBranch] = useState('');

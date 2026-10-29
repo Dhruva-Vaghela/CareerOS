@@ -27,3 +27,12 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters long'),
 });
 
+export const googleCallbackSchema = z.object({
+  code: z.string().min(1, 'Authorization code is required'),
+  redirectUri: z.string().url().optional(),
+});
+
+export const googleExchangeSchema = z.object({
+  ticket: z.string().min(1, 'Exchange ticket is required'),
+});
+

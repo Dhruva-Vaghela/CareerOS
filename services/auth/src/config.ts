@@ -20,6 +20,10 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default('local-dev-secret-do-not-use-in-prod'),
   JWT_EXPIRES_IN: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CALLBACK_URL: z.string().default('http://localhost:3001/api/v1/auth/google/callback'),
+  FRONTEND_URL: z.string().default('http://localhost:5173'),
 });
 
 const parsed = envSchema.safeParse(process.env);

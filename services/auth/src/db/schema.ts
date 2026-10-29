@@ -4,8 +4,9 @@ import { UserStatus } from '@careeros/shared-types';
 export interface IUserDocument extends Document {
   _id: mongoose.Types.ObjectId;
   email: string;
-  passwordHash: string;
+  passwordHash?: string | null;
   authProvider: string;
+  googleId?: string | null;
   status: UserStatus;
   resetToken?: string | null;
   resetTokenExpiry?: Date | null;
@@ -23,8 +24,9 @@ export interface ISessionDocument extends Document {
 const userSchema = new Schema<IUserDocument>(
   {
     email: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String, required: false, default: null },
     authProvider: { type: String, required: true, default: 'LOCAL' },
+    googleId: { type: String, default: null, sparse: true, index: true },
     status: { type: String, enum: Object.values(UserStatus), required: true, default: UserStatus.ACTIVE },
     resetToken: { type: String, default: null, index: true },
     resetTokenExpiry: { type: Date, default: null },
@@ -66,8 +68,9 @@ export const SessionModel = mongoose.models.Session || mongoose.model<ISessionDo
 export type UserRow = {
   id: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string | null;
   authProvider: string;
+  googleId?: string | null;
   status: UserStatus;
   createdAt: Date;
 };

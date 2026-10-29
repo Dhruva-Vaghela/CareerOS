@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { createLogger } from '@careeros/logger';
 import { globalErrorHandler } from '@careeros/errors';
 import { parseAuth } from './middleware/auth.js';
@@ -25,7 +26,13 @@ async function bootstrap() {
 
   const app = express();
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin: [config.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3001'],
+      credentials: true,
+    }),
+  );
+  app.use(cookieParser());
   app.use(express.json());
   app.use(parseAuth());
 

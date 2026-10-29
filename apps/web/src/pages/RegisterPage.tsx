@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,6 +15,8 @@ import {
 import { CareerOSLogo } from '../components/CareerOSLogo';
 import { AuthOrbitalStage } from '../components/AuthOrbitalStage';
 import { Alert } from '../components/Alert';
+import { GoogleIcon } from '../components/GoogleIcon';
+import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
 
 export function RegisterPage() {
@@ -32,6 +34,18 @@ export function RegisterPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  const oauthError = searchParams.get('error');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = () => {
+    setError('');
+    setIsGoogleLoading(true);
+    // Redirect user to backend Google OAuth initiation route
+    window.location.href = '/api/v1/auth/google';
+  };
 
   // Subtle mouse parallax on desktop
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -87,7 +101,8 @@ export function RegisterPage() {
         throw new Error(data.error?.message || 'Registration failed');
       }
 
-      navigate('/login', { state: { message: 'Registration successful! Please sign in.' } });
+      login(data.data.accessToken, data.data.refreshToken, data.data.user);
+      navigate('/onboarding', { state: { fullName } });
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred');
     } finally {
@@ -193,7 +208,7 @@ export function RegisterPage() {
             <p className="cos-card-subtitle">Start your career journey with your digital twin.</p>
           </div>
 
-          {error && <Alert type="error" message={error} />}
+          {(oauthError || error) && <Alert type="error" message={oauthError || error} />}
 
           <form onSubmit={handleSubmit} className="cos-form" noValidate>
             {/* Full Name Field */}
@@ -304,7 +319,7 @@ export function RegisterPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
               className="cos-submit-btn"
               aria-label="Create Account"
             >
@@ -321,6 +336,32 @@ export function RegisterPage() {
               )}
             </button>
           </form>
+
+          {/* OAuth Separator */}
+          <div className="cos-oauth-divider" role="separator" aria-label="Or continue with">
+            <span>Or continue with</span>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isLoading || isGoogleLoading}
+            className="cos-google-btn"
+            aria-label="Sign up with Google"
+          >
+            {isGoogleLoading ? (
+              <>
+                <span className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
+                <span>Redirecting to Google...</span>
+              </>
+            ) : (
+              <>
+                <GoogleIcon size={20} />
+                <span>Sign up with Google</span>
+              </>
+            )}
+          </button>
 
           {/* Sign In Link */}
           <div className="cos-card-footer">

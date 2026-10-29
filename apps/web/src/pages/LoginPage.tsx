@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,6 +14,7 @@ import {
 import { CareerOSLogo } from '../components/CareerOSLogo';
 import { AuthOrbitalStage } from '../components/AuthOrbitalStage';
 import { Alert } from '../components/Alert';
+import { GoogleIcon } from '../components/GoogleIcon';
 import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
 
@@ -31,8 +32,18 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const message = location.state?.message;
+  const oauthError = searchParams.get('error');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = () => {
+    setError('');
+    setIsGoogleLoading(true);
+    // Redirect user to backend Google OAuth initiation route
+    window.location.href = '/api/v1/auth/google';
+  };
 
   // Subtle mouse parallax on desktop
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -185,8 +196,8 @@ export function LoginPage() {
             <p className="cos-card-subtitle">Sign in to continue your career journey.</p>
           </div>
 
-          {message && <Alert type="success" message={message} />}
-          {error && <Alert type="error" message={error} />}
+          {message && !oauthError && !error && <Alert type="success" message={message} />}
+          {(oauthError || error) && <Alert type="error" message={oauthError || error} />}
 
           <form onSubmit={handleSubmit} className="cos-form" noValidate>
             {/* Email Field */}
@@ -251,7 +262,7 @@ export function LoginPage() {
             {/* Primary Submit Button */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
               className="cos-submit-btn"
               aria-label="Sign in"
             >
@@ -268,6 +279,32 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* OAuth Separator */}
+          <div className="cos-oauth-divider" role="separator" aria-label="Or continue with">
+            <span>Or continue with</span>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isLoading || isGoogleLoading}
+            className="cos-google-btn"
+            aria-label="Continue with Google"
+          >
+            {isGoogleLoading ? (
+              <>
+                <span className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
+                <span>Redirecting to Google...</span>
+              </>
+            ) : (
+              <>
+                <GoogleIcon size={20} />
+                <span>Continue with Google</span>
+              </>
+            )}
+          </button>
 
           {/* Create Account Link */}
           <div className="cos-card-footer">

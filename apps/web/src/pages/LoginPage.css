@@ -528,6 +528,73 @@
   cursor: not-allowed;
 }
 
+/* --------------------------------------------------------------------------
+   OAuth Divider & Third-Party Auth Buttons
+   -------------------------------------------------------------------------- */
+.cos-oauth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0 1.25rem 0;
+  text-align: center;
+}
+
+.cos-oauth-divider::before,
+.cos-oauth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.cos-oauth-divider span {
+  padding: 0 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.cos-google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.82rem 1.25rem;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cos-google-btn:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.cos-google-btn:active:not(:disabled) {
+  transform: translateY(0);
+  background-color: #f1f5f9;
+}
+
+.cos-google-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.cos-google-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 2px 4px rgba(15, 23, 42, 0.05);
+}
+
 /* Footer Link */
 .cos-card-footer {
   text-align: center;

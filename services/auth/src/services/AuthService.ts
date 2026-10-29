@@ -2,6 +2,7 @@ import { UserModel, SessionModel } from '../db/schema.js';
 import { PasswordService } from './PasswordService.js';
 import { JwtService } from './JwtService.js';
 import { UnauthorizedError, ConflictError, NotFoundError, BadRequestError } from '@careeros/errors';
+import { UserStatus } from '@careeros/shared-types';
 import { eventBus } from '../bus.js';
 import crypto from 'crypto';
 
@@ -39,9 +40,25 @@ export class AuthService {
       },
     });
 
+    const accessToken = this.jwtService.generateAccessToken(userIdStr);
+    const { token: refreshToken, hash: refreshTokenHash } = this.jwtService.generateRefreshToken();
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+    await SessionModel.create({
+      userId: userIdStr,
+      refreshTokenHash,
+      expiresAt,
+    });
+
     return {
-      id: userIdStr,
-      email: newUser.email,
+      accessToken,
+      refreshToken,
+      user: {
+        id: userIdStr,
+        email: newUser.email,
+      },
     };
   }
 
@@ -90,6 +107,95 @@ export class AuthService {
         id: userIdStr,
         email: user.email,
       },
+    };
+  }
+
+  async loginWithGoogle(profile: { sub: string; email: string; name?: string; picture?: string }) {
+    const normalizedEmail = profile.email.toLowerCase();
+
+    // 1. Look up user by googleId or email
+    let user = await UserModel.findOne({
+      $or: [{ googleId: profile.sub }, { email: normalizedEmail }],
+    });
+
+    let isNewUser = false;
+
+    if (!user) {
+      // 2. Provision new user identity
+      user = await UserModel.create({
+        email: normalizedEmail,
+        googleId: profile.sub,
+        authProvider: 'GOOGLE',
+        status: UserStatus.ACTIVE,
+      });
+      isNewUser = true;
+
+      const userIdStr = user._id.toHexString();
+
+      await eventBus.publish({
+        name: 'user.registered',
+        metadata: {
+          eventId: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          traceId: 'google-oauth-registration',
+          userId: userIdStr,
+        },
+        payload: {
+          userId: userIdStr,
+          email: user.email,
+        },
+      });
+    } else {
+      // 3. Link Google ID if not already associated (e.g. existing email/password account)
+      if (!user.googleId) {
+        user.googleId = profile.sub;
+        await user.save();
+      }
+
+      if (user.status !== UserStatus.ACTIVE) {
+        throw new UnauthorizedError('User account is deactivated or inactive');
+      }
+    }
+
+    const userIdStr = user._id.toHexString();
+
+    // 4. Issue application JWT tokens and persist session
+    const accessToken = this.jwtService.generateAccessToken(userIdStr);
+    const { token: refreshToken, hash: refreshTokenHash } = this.jwtService.generateRefreshToken();
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await SessionModel.create({
+      userId: userIdStr,
+      refreshTokenHash,
+      expiresAt,
+    });
+
+    await eventBus.publish({
+      name: 'user.login',
+      metadata: {
+        eventId: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        traceId: 'google-oauth-login',
+        userId: userIdStr,
+      },
+      payload: {
+        userId: userIdStr,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: userIdStr,
+        email: user.email,
+      },
+      name: profile.name,
+      picture: profile.picture,
+      isNewUser,
     };
   }
 
