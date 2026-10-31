@@ -40,6 +40,7 @@ async function bootstrap() {
 
   app.use(globalErrorHandler);
 
+  // Start listening on configured port
   const server = app.listen(config.PORT, () => {
     logger.info({ port: config.PORT }, 'Auth Server successfully started and listening');
   });
