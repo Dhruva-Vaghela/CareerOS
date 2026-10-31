@@ -17,7 +17,10 @@ CareerOS AI is structured as a monorepo using npm workspaces (`apps/*`, `package
 | **Resume Service** | Express Microservice | `3004` | `services/resume` | `/api/v1/resume` |
 | **Digital Twin Service** | Express Microservice | `3005` | `services/digital-twin` | `/api/v1/digital-twin` |
 | **Roadmap Engine Service** | Express Microservice | `3006` | `services/roadmap-engine` | `/api/v1/roadmaps` |
-| **Health Check Service** | Express Microservice | - | `services/health-check` | Diagnostics & monitoring |
+| **Assessment Service** | Express Microservice | `3007` | `services/assessment` | `/api/v1/assessments` |
+| **Projects Service** | Express Microservice | `3008` | `services/projects` | `/api/v1/projects` |
+| **Interview Service** | Express Microservice | `3009` | `services/interview` | `/api/v1/interviews` |
+| **Health Check Service** | Express Microservice | `3000` by default | `services/health-check` | Standalone diagnostics; not started by `npm run dev` |
 
 ---
 
@@ -38,7 +41,7 @@ Before starting, ensure your system meets the following requirements:
 5. **Groq API Key**:
    - Obtain an API key from [Groq Console](https://console.groq.com/).
 6. **Cloudinary (Optional)**:
-   - For resume file uploads. The repository includes default development credentials in `.env_Example`, or you can supply your own Cloudinary cloud credentials.
+   - Used for resume file storage. Configure your own Cloudinary credentials in `.env` if you use resume uploads; the example file contains placeholders, not working credentials.
 
 ---
 
@@ -63,21 +66,21 @@ npm install
 
 ### Step 2: Configure Environment Variables
 
-Create your local `.env` configuration file from `.env_Example`:
+Create your local `.env` configuration file from `.env.example`:
 
 #### On macOS / Linux:
 ```bash
-cp .env_Example .env
+cp .env.example .env
 ```
 
 #### On Windows (PowerShell):
 ```powershell
-Copy-Item .env_Example .env
+Copy-Item .env.example .env
 ```
 
 #### On Windows (Command Prompt):
 ```cmd
-copy .env_Example .env
+copy .env.example .env
 ```
 
 Now open `.env` in your editor and configure the keys:
@@ -89,7 +92,7 @@ DATABASE_URL=mongodb+srv://<username>:<password>@<cluster-url>/careeros?retryWri
 # Optional: Public DNS servers if your network or VPN causes ECONNREFUSED on MongoDB Atlas SRV lookups
 DNS_SERVERS=1.1.1.1,8.8.8.8
 
-# Cloudinary (Used by Resume service; you may use default dev keys or your own)
+# Cloudinary (Used by Resume service; replace these placeholders with your credentials)
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloud_key
 CLOUDINARY_API_SECRET=your_secret_key
@@ -158,13 +161,13 @@ Run the automated test suite to ensure all microservices and shared libraries ar
 npm test
 ```
 
-All 15 test suites (Auth, Profile, Career Goals, Resume, Digital Twin, Health Check, AI Client, etc.) should pass.
+The test command runs the repository's Vitest suite. In the current checkout, the latest run had failures: auth tests could not resolve `google-auth-library`, and a GitHub OAuth test failed because `GITHUB_CLIENT_ID` was not configured. Do not treat a successful build as evidence that all tests pass.
 
 ---
 
 ### Step 6: Start the Development Server
 
-Start all microservices and the web frontend simultaneously:
+Start the nine configured backend services and the web frontend simultaneously:
 
 ```bash
 npm run dev
@@ -177,7 +180,12 @@ This command runs `concurrently` using `cross-env` across both Windows and macOS
 - `[RESUME]` at `http://localhost:3004`
 - `[TWIN]` at `http://localhost:3005`
 - `[ROADMAP]` at `http://localhost:3006`
+- `[ASSESSMENT]` at `http://localhost:3007`
+- `[PROJECTS]` at `http://localhost:3008`
+- `[INTERVIEW]` at `http://localhost:3009`
 - `[WEB]` at `http://localhost:5173`
+
+The standalone Health Check service is not included in this command.
 
 #### Alternative Run Modes:
 - **Backend Services Only**:
@@ -209,13 +217,13 @@ Run from the root directory:
 
 | Script | Command | Purpose |
 |---|---|---|
-| `dev` | `npm run dev` | Runs all 5 backend services and the Vite web app concurrently with live reloading. |
-| `dev:services` | `npm run dev:services` | Runs only the 5 backend services. |
-| `build` | `npm run build` | Cleans previous builds (`prebuild`) and compiles TypeScript for all packages and services. |
+| `dev` | `npm run dev` | Runs the nine configured backend services and the Vite web app concurrently with live reloading. |
+| `dev:services` | `npm run dev:services` | Runs the nine configured backend services without the web app. |
+| `build` | `npm run build` | Cleans previous builds (`prebuild`) and compiles TypeScript project references. |
 | `test` | `npm test` | Runs all Vitest test suites. |
 | `test:watch` | `npm run test:watch` | Runs Vitest in watch mode. |
 | `lint` | `npm run lint` | Runs ESLint across `packages` and `services`. |
-| `format` | `npm run format` | Runs Prettier across all files. |
+| `format` | `npm run format` | Runs Prettier across TypeScript files in `packages/` and `services/`. |
 
 ---
 

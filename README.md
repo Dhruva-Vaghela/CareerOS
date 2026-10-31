@@ -1,6 +1,6 @@
 # CareerOS AI
 
-> **AI-Powered Mock Interview Platform with a Career Digital Twin**
+> **AI-powered career development and interview preparation platform**
 
 ---
 
@@ -19,11 +19,11 @@
 
 ## Overview
 
-CareerOS AI is an AI-powered mock interview platform that helps students and professionals prepare for real-world interviews through intelligent, interactive, and personalized interview experiences.
+CareerOS AI is a career development platform for students and early-career professionals. The repository currently includes authentication and profile flows, career goals, resume analysis, AI roadmap generation, Career Digital Twin context, assessments, projects, and Company Interview Mode.
 
-Unlike traditional mock interview platforms, CareerOS AI leverages a **Career Digital Twin**—a dynamic digital representation of a user's skills, learning progress, projects, resume, portfolio, interview history, and career goals—to understand each user's professional journey and deliver highly personalized interview preparation.
+Unlike traditional mock interview platforms, CareerOS AI uses a **Career Digital Twin**—an event-driven context layer that aggregates career information from implemented services. Its current context does not yet include every area named in the product vision.
 
-The platform combines adaptive AI coaching, realistic company interview simulations, voice interaction, and continuous performance tracking to help users build confidence and improve interview readiness across multiple domains.
+Some capabilities described in the product and architecture documents are still planned or only partially implemented. In particular, do not assume Practice Mode, full skill tracking, evidence-based progress, readiness, or recommendations are complete just because they are part of the product vision.
 
 ---
 
@@ -35,17 +35,13 @@ To become an intelligent career companion that continuously understands, guides,
 
 ## Core Features
 
-* AI-Powered Mock Interviews
-* Practice Interview Mode
-* Company Interview Simulation
-* Career Digital Twin
-* AI Follow-up Questions
-* Voice & Text Interview Support
-* Interview Performance Analysis
-* Personalized Feedback
-* Interview Readiness Tracking
-* AI Recommendations
-* Progress Analytics
+* Career goals and user profile management
+* Resume upload and analysis
+* AI-generated learning roadmaps
+* Career Digital Twin context aggregation
+* Project tracking and assessments
+* Company Interview Mode, including voice-related endpoints
+* Web onboarding, dashboard, and profile experience
 
 ---
 
@@ -53,11 +49,11 @@ To become an intelligent career companion that continuously understands, guides,
 
 ### Practice Mode
 
-An adaptive interview mode where AI acts as a personal career coach by generating questions based on the user's skills, learning progress, projects, previous interviews, resume, career goals, and Career Digital Twin. The objective is continuous learning and improvement.
+Practice Mode is part of the product vision and is not yet a complete implemented workflow.
 
 ### Company Interview Mode
 
-A realistic interview simulation that generates role- and company-specific interview experiences based on industry-standard interview patterns, helping users prepare for actual recruitment processes.
+The implemented interview service includes Company Interview Mode for role- and company-specific simulations. Its current scope should not be read as a claim that every planned interview feature is complete.
 
 ---
 
@@ -65,13 +61,15 @@ A realistic interview simulation that generates role- and company-specific inter
 
 The Career Digital Twin is the foundation of CareerOS AI.
 
-It is a continuously evolving digital representation of a user's professional journey that combines skills, learning progress, projects, resumes, portfolios, interview history, goals, strengths, and preferences into a unified profile.
+It is an event-driven context aggregation layer. Its available context reflects the modules and events currently implemented; it does not yet include every partition described in the architecture.
 
 This enables AI to deliver highly personalized interview experiences while each module remains the source of truth for its own data.
 
 ---
 
-## AI Workflow
+## Workflow
+
+The flow below is the intended product workflow; not every stage is implemented or connected yet.
 
 ```text
 User Request
@@ -112,13 +110,13 @@ Personalized Recommendations
 
 ### Current Implementation
 * **Architecture:** Monorepo with npm workspaces (`apps/*`, `packages/*`, `services/*`)
-* **Frontend:** React 18, TypeScript, Vite, TailwindCSS / Vanilla CSS
+* **Frontend:** React 19, TypeScript, Vite, CSS
 * **Backend:** Node.js (>=20.16.0 or >=22.3.0), Express, TypeScript (`tsx`)
-* **Database:** MongoDB Atlas / Local MongoDB via Mongoose
+* **Database:** MongoDB via Mongoose
 * **AI Orchestration:** Groq Provider (`ai-client`) with structured outputs, prompt manager, retry engine, and telemetry
 * **File & Resume Storage:** Cloudinary (`services/resume`)
-* **Testing:** Vitest (unit & integration test suites)
-* **Code Quality:** ESLint & Prettier
+* **Testing:** Vitest
+* **Code Quality:** ESLint / Prettier for backend and packages; Oxlint is configured in the web workspace
 
 ### Planned Ecosystem Expansion
 * Redis (caching & pub/sub expansion)
@@ -138,13 +136,16 @@ Personalized Recommendations
 | **Resume Service** | `3004` | `services/resume` | Resume PDF Upload, Parsing & Cloudinary Storage |
 | **Digital Twin Service** | `3005` | `services/digital-twin` | Event-driven Context Aggregation & Querying |
 | **Roadmap Engine Service** | `3006` | `services/roadmap-engine` | AI-Powered Personalized Curriculum & Milestone Tracking |
-| **Health Check Service** | - | `services/health-check` | Database & Service Connectivity Diagnostics |
+| **Assessment Service** | `3007` | `services/assessment` | Assessment generation and scoring |
+| **Projects Service** | `3008` | `services/projects` | Project tracking and GitHub integration |
+| **Interview Service** | `3009` | `services/interview` | Company interviews, history, and voice routes |
+| **Health Check Service** | `3000` (standalone) | `services/health-check` | Database and service diagnostics; not included in `npm run dev` |
 
 ---
 
 ## Quick Start
 
-> **Full Cross-Platform Setup Guide**: See **[SetUpGuide.md](file:///Users/yeshaparwani/Documents/Projects-Learn/CareerOS/SetUpGuide.md)** for detailed Windows and macOS instructions.
+> **Full Cross-Platform Setup Guide**: See [SetUpGuide.md](SetUpGuide.md) for Windows and macOS/Linux instructions.
 
 ```bash
 # 1. Install dependencies across workspaces
@@ -152,9 +153,9 @@ npm install
 
 # 2. Configure environment
 # macOS / Linux:
-cp .env_Example .env
+cp .env.example .env
 # Windows (PowerShell):
-Copy-Item .env_Example .env
+Copy-Item .env.example .env
 
 # 3. Build shared packages (required)
 npm run build
@@ -185,18 +186,6 @@ CareerOS AI follows modern software engineering practices:
 * High Cohesion & Loose Coupling
 * Architecture Before Implementation
 * Documentation-First Development
-
----
-
-## Project Status
-
-🚀 **Phase 1 Foundation Implemented & Verified**
-
-The core foundation, AI reasoning pipeline, authentication, profile, career goals, resume parsing, digital twin synchronization, and web frontend are implemented and passing all 15 test suites.
-
-Next phase on the roadmap: **AI Roadmap Engine & Skill Tracking**.
-
-See `roadmap-2.md` and `todo-2.md` for the latest roadmap and task status.
 
 ---
 

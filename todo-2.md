@@ -2,7 +2,7 @@
 
 > **Repository-only execution checklist.**
 >
-> Source of truth: `docs/careeros-ai-architecture.md`
+> Source of truth: `careeros-ai-architecture.md`
 >
 > Also follow: `CLAUDE.md`, `PRODUCT_CONTEXT.md`, `AI_ARCHITECTURE.md`
 >
@@ -41,7 +41,7 @@ Before working on any module or feature, follow this order strictly:
 # Current Work
 
 - [x] Establish actual repository implementation status.
-- [x] Compare the current codebase against `docs/careeros-ai-architecture.md`.
+- [x] Compare the current codebase against `careeros-ai-architecture.md`.
 - [x] Record completed modules in this file only after verifying them in the repository.
 - [ ] Work on one module/bounded context at a time.
 - [x] Do not mark a task complete based only on documentation.
@@ -62,11 +62,10 @@ Before working on any module or feature, follow this order strictly:
 - [x] `services/roadmap-engine`
 - [ ] `services/progress-engine`
 - [ ] `services/study-planner`
-- [ ] `services/skill-tracking`
+- [x] `services/skill-tracking`
 - [x] `services/projects`
-- [ ] `services/assessments`
-- [ ] `services/interview/practice-mode`
-- [x] `services/interview/company-mode`
+- [x] `services/assessment`
+- [x] `services/interview`
 - [ ] `services/career-readiness`
 - [ ] `services/recommendation-engine`
 - [ ] `services/productivity`
@@ -107,8 +106,8 @@ Before working on any module or feature, follow this order strictly:
 - [x] Unit tests
 - [x] Integration tests
 - [x] API tests
-- [x] Event contract tests
-- [x] Browser/UI tests
+- [ ] Event contract tests
+- [ ] Browser/UI tests
 
 ---
 
@@ -126,27 +125,27 @@ Before working on any module or feature, follow this order strictly:
 - [x] `goal.created`
 - [x] `goal.changed`
 - [x] Unit tests
-- [x] Business-rule tests
-- [x] API tests
-- [x] Event contract tests
-- [x] Browser/UI tests
+- [ ] Business-rule tests
+- [ ] API tests
+- [ ] Event contract tests
+- [ ] Browser/UI tests
 
 ---
 
 # 4. Skill Tracking
 
-- [ ] Skill domain model
-- [ ] Target-role skill requirements
-- [ ] Roadmap-node skill mapping
-- [ ] Skill evidence aggregation
-- [ ] Skill-gap calculation
-- [ ] Skill APIs
-- [ ] `skill.updated`
-- [ ] Ownership/security
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Event tests
-- [ ] API tests
+- [x] Skill domain model
+- [x] Target-role skill requirements
+- [x] Roadmap-node skill mapping
+- [x] Skill evidence aggregation
+- [x] Skill-gap calculation
+- [x] Skill APIs
+- [x] `skill.updated`
+- [x] Ownership/security
+- [x] Unit tests
+- [x] Integration tests
+- [x] Event tests
+- [x] API tests
 
 ---
 
@@ -257,13 +256,13 @@ Before working on any module or feature, follow this order strictly:
 ## Tests
 
 - [x] Unit
-- [x] Repository
+- [ ] Repository
 - [x] Generation
 - [x] Schema
-- [x] Dependency
-- [x] Versioning
-- [x] Event contract
-- [x] API
+- [ ] Dependency
+- [ ] Versioning
+- [ ] Event contract
+- [ ] API
 - [ ] Browser
 - [ ] API
 - [ ] Browser
@@ -322,17 +321,17 @@ Before working on any module or feature, follow this order strictly:
 - [x] Project-to-roadmap mapping
 - [x] Submission model
 - [x] Project status lifecycle
-- [x] Project history
+- [ ] Project history
 - [x] `project.submitted`
 - [x] Non-verified evidence handling
 - [x] Project APIs
 - [x] Project dashboard
-- [x] Suggested projects
+- [ ] Suggested projects
 - [x] Project details
-- [x] Submission form
-- [x] Submission history
+- [ ] Submission form
+- [ ] Submission history
 - [x] Validation tests
-- [x] Ownership tests
+- [ ] Ownership tests
 - [x] Event tests
 - [ ] Browser tests
 
@@ -344,24 +343,24 @@ Before working on any module or feature, follow this order strictly:
 
 # 10. Assessments & Quizzes
 
-- [ ] Assessment domain model
-- [ ] Assessment Attempt model
-- [ ] Topic quizzes
-- [ ] Module assessments
-- [ ] Question-to-skill mapping
-- [ ] Scoring
-- [ ] `assessment.scored`
-- [ ] Assessment APIs
-- [ ] Assessment UI
+- [x] Assessment domain model
+- [x] Assessment Attempt model
+- [x] Topic quizzes
+- [x] Module assessments
+- [x] Question-to-skill mapping
+- [x] Scoring
+- [x] `assessment.scored`
+- [x] Assessment APIs
+- [x] Assessment UI
 - [ ] Security tests
-- [ ] Scoring tests
+- [x] Scoring tests
 - [ ] Event tests
 - [ ] API tests
 - [ ] Browser tests
 
 **MVP guardrail**
 
-- [ ] Do NOT implement AI-graded open-ended assessment questions.
+- [x] Do NOT implement AI-graded open-ended assessment questions.
 
 ---
 
@@ -372,11 +371,11 @@ Before working on any module or feature, follow this order strictly:
 - [x] Twin context store
 - [x] Identity State
 - [x] Career Goal State
+- [x] Interview State
 - [ ] Skill State
 - [ ] Learning State
 - [ ] Evidence State
 - [ ] Project State
-- [ ] Interview State
 - [ ] Recommendation State
 - [ ] Readiness State
 - [ ] Conversation Metadata
@@ -386,9 +385,9 @@ Before working on any module or feature, follow this order strictly:
 - [x] Event subscriber
 - [x] Idempotency
 - [x] Duplicate-event handling
-- [x] Out-of-order handling
+- [ ] Out-of-order handling
 - [x] Affected-partition-only updates
-- [x] Context versioning
+- [ ] Context versioning
 - [ ] Cache
 - [ ] Partition cache
 - [ ] Cache invalidation
@@ -403,19 +402,19 @@ Before working on any module or feature, follow this order strictly:
 - [x] Full context API
 - [x] Roadmap context API
 - [x] Interview context API
-- [x] Chatbot context API
-- [x] History API
+- [ ] Chatbot context API
+- [ ] History API
 
 ## Tests
 
-- [x] Partition tests
-- [x] Synchronization tests
-- [x] Idempotency tests
+- [ ] Partition tests
+- [ ] Synchronization tests
+- [ ] Idempotency tests
 - [ ] Cache tests
-- [x] Context retrieval tests
-- [x] API tests
-- [x] Integration tests
-- [x] Event contract tests
+- [ ] Context retrieval tests
+- [ ] API tests
+- [ ] Integration tests
+- [ ] Event contract tests
 
 **Guardrail**
 
@@ -454,7 +453,7 @@ Before working on any module or feature, follow this order strictly:
 
 - [x] Company/role/experience/round inputs
 - [x] No Twin context retrieval
-- [x] Build-time/lint-level no-Twin dependency check
+- [ ] Build-time/lint-level no-Twin dependency check
 - [x] Question generation
 - [x] Response evaluation
 - [x] Final feedback
@@ -535,9 +534,9 @@ Before working on any module or feature, follow this order strictly:
 ## Architecture
 
 - [x] One logical schema per service
-- [x] No cross-schema database joins
+- [ ] No cross-schema database joins
 - [x] No cross-module direct data writes
-- [x] Public API/event boundaries respected
+- [ ] Public API/event boundaries respected
 - [x] Event-driven personalization
 - [x] Digital Twin remains non-owning
 - [x] AI business-data ownership rules respected
@@ -545,19 +544,19 @@ Before working on any module or feature, follow this order strictly:
 ## Security
 
 - [x] Authenticated endpoints require valid session/JWT
-- [x] User ownership enforced everywhere
-- [x] Service-to-service calls carry authenticated `user_id`
-- [x] User-generated free text sanitized
+- [ ] User ownership enforced everywhere
+- [ ] Service-to-service calls carry authenticated `user_id`
+- [ ] User-generated free text sanitized
 - [x] AI context isolated per user
 - [x] Provider credentials centralized
 
 ## Events
 
-- [x] Contract test every published event
-- [x] Idempotency keys
+- [ ] Contract test every published event
+- [ ] Idempotency keys
 - [x] Duplicate event handling
-- [x] Retry behavior
-- [x] Consumer compatibility
+- [ ] Retry behavior
+- [ ] Consumer compatibility
 
 ## AI
 
@@ -582,9 +581,9 @@ Before working on any module or feature, follow this order strictly:
 
 ## Regression
 
-- [x] Unit suite
+- [ ] Unit suite
 - [x] Integration suite
-- [x] Event contract suite
+- [ ] Event contract suite
 - [x] API suite
 - [ ] Browser suite
 - [x] Company Interview no-Twin invariant

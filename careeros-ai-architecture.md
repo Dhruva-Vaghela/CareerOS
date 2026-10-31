@@ -1073,5 +1073,3 @@ Do **not** build in the MVP:
 Everything else specified in this document is in scope for the MVP.
 
 ---
-
-*End of architecture reference. This document should be updated (versioned) whenever a module's scope, event contract, or Digital-Twin interaction changes — treat it as living documentation co-located with the codebase (\`docs/careeros-ai-architecture.md\`), not a one-time artifact.*

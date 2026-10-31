@@ -2,13 +2,13 @@
 
 **Type:** AI Coding Agent Operating Manual (not a project documentation file)
 **Applies to:** Claude Code, Antigravity, and any AI coding agent working in this repository
-**Source of truth:** `docs/careeros-ai-architecture.md`
+**Source of truth:** `careeros-ai-architecture.md`
 
 ---
 
 ## 1. Purpose
 
-This file exists to tell an AI coding agent **how to work** in this repository — not what the product is. The architecture document (`docs/careeros-ai-architecture.md`) is the single source of truth for *what* CareerOS AI is and *how it is designed*. This file governs *behavior*: reading order, engineering discipline, token usage, and the boundaries an agent must never cross.
+This file exists to tell an AI coding agent **how to work** in this repository — not what the product is. The architecture document (`careeros-ai-architecture.md`) is the single source of truth for *what* CareerOS AI is and *how it is designed*. This file governs *behavior*: reading order, engineering discipline, token usage, and the boundaries an agent must never cross.
 
 **How Claude Code should use this file:**
 - Read it in full before touching any code, on every new session.
@@ -19,7 +19,7 @@ This file exists to tell an AI coding agent **how to work** in this repository �
 
 | Document | Role |
 |---|---|
-| `docs/careeros-ai-architecture.md` | Architecture source of truth — module design, data flow, event contracts |
+| `careeros-ai-architecture.md` | Architecture source of truth — module design, data flow, event contracts |
 | `CLAUDE.md` (this file) | Operating manual — how to behave while implementing that architecture |
 | `PROJECT_CONTEXT.md` (if present) | Current build status, active priorities |
 | `IMPLEMENTATION_ORDER.md` (if present) | Sequencing of module implementation |
@@ -33,7 +33,7 @@ This file does not restate the architecture. If you need module details, go read
 
 Before writing or modifying any code, read in this exact order. Stop as soon as you have what you need for the task — do not read further documents "just in case."
 
-1. **`docs/careeros-ai-architecture.md`** — always, every session. This is non-negotiable.
+1. **`careeros-ai-architecture.md`** — always, every session. This is non-negotiable.
 2. **`PROJECT_CONTEXT.md`** (if it exists) — current status, what's already built, what's in flight.
 3. **`IMPLEMENTATION_ORDER.md`** (if it exists) — confirms this task is sequenced correctly relative to its dependencies.
 4. **The specific module's documentation section** relevant to the current task (e.g., only §14 Mock Interview System if working on interviews — not the whole document re-read line by line if you already loaded it this session).

@@ -1,7 +1,6 @@
 # AI_ARCHITECTURE.md — CareerOS AI
 
 **Document type:** AI architecture reference — the single source of truth for how AI is built inside CareerOS AI
-**Not covered here:** engineering workflow (`CLAUDE.md`), system/module architecture (`CareerOS_Architecture.md`), product rationale (`PRODUCT_CONTEXT.md`)
 **Audience:** engineers implementing or extending any AI-powered feature in this product
 
 ---
@@ -9,7 +8,6 @@
 # 1. AI Philosophy
 
 - **AI augments user decisions; it never makes them.** Every AI output (a roadmap, a recommendation, an interview evaluation) is presented to the user as guidance, not as an autonomous decision the platform enforces on their behalf.
-- **AI never owns business data.** Business modules (Roadmap, Assessments, Progress, Readiness, etc.) remain the sole owners and systems of record for their own data, exactly as defined in `CareerOS_Architecture.md`. AI generates content and judgments that business logic then persists — AI itself has no database of its own beyond the Career Digital Twin's context store, which is a derived view, not a source of truth.
 - **AI is stateless between requests.** No AI provider call carries memory of prior calls implicitly. Anything that looks like "memory" (the Twin, conversation history) is explicitly assembled by CareerOS and passed in on every request.
 - **CareerOS owns all persistent data.** Conversation history, generated roadmaps, interview transcripts — all of it is stored and versioned by CareerOS systems, never left to reside only inside a provider's own infrastructure.
 - **Every AI response must be grounded in user evidence.** Wherever a business module has relevant evidence about the user (skills, progress, assessments, interview history), that evidence is provided as context — AI is not permitted to fall back on generic, ungrounded output where grounded evidence exists.
@@ -104,8 +102,6 @@ This is the most important section in this document. **Context quality determine
 
 **Why context engineering matters more than prompt length:** a longer prompt stuffed with irrelevant context doesn't just cost more tokens — it actively degrades output quality by diluting the signal the model needs to ground its response, and it increases the surface area for the model to latch onto something irrelevant. The discipline that matters is *precision* — including exactly the evidence relevant to this task and nothing else — not volume.
 
-**Context freshness:** because the Career Digital Twin is continuously updated by business-module events (per `CareerOS_Architecture.md` §4), the Context Builder always retrieves current state at request time rather than relying on any cached context from a prior AI call.
-
 ---
 
 # 5. Prompt Engineering Strategy
@@ -171,8 +167,6 @@ Frontend
 
 **AI Responsibilities:** Propose roadmap structure (modules → topics → subtopics → checklist items) and propose Mandatory/Recommended/Optional tagging for each node, grounded in the user's actual background and target role.
 
-**Expected Outputs:** A structured roadmap tree conforming to the domain model defined in `CareerOS_Architecture.md` §8.6.
-
 **Validation Strategy:** Schema validation of the tree structure; additionally, a business-logic pass confirms the dependency graph is well-formed (no orphaned prerequisite links) before the roadmap is considered generated.
 
 **Persistence Strategy:** The Roadmap Engine (business logic), not the AI layer, persists the validated roadmap and owns all subsequent mutation of it.
@@ -199,8 +193,6 @@ Treated in full in §8 — its AI-facing role is as the shared context source ev
 
 **Expected Outputs:** A structured, prioritized list of recommendation objects (type, description, priority, source reasoning).
 
-**Validation Strategy:** Schema validation; a dedupe pass against currently active, non-dismissed recommendations before anything is persisted (per `CareerOS_Architecture.md` §16.11).
-
 **Persistence Strategy:** The Recommendation Engine business logic persists validated recommendations; the AI layer never writes directly to the recommendations table.
 
 **Interaction with other modules:** Triggered by `readiness.updated` and `interview.completed` events; consumed by the Dashboard and surfaced by the Chatbot.
@@ -218,8 +210,7 @@ Treated in full in §8 — its AI-facing role is as the shared context source ev
 - Company Mode: company, job role, experience level, interview round only.
 
 **Context Required:**
-- Practice Mode: Skill state, Evidence state, Learning state.
-- Company Mode: **none from the Twin** — this is an explicit architectural exception, not an oversight (see §7.4 note below and `CareerOS_Architecture.md` §14.2.7).
+- Company Mode: Skill state, Evidence state, Learning state.
 
 **AI Responsibilities:** Generate questions, (Practice Mode only) adapt difficulty and follow-ups in real time, evaluate responses, and generate final feedback.
 
@@ -252,8 +243,6 @@ The Career Digital Twin should not be thought of as "a database the chatbot happ
 **Long-term memory.** In the absence of the Twin, "memory" would have to mean something different and weaker in each module — the chatbot might remember only the current conversation, the interview module might remember only recent sessions. The Twin is what unifies all of this into one coherent, long-term picture that persists across the user's entire relationship with the product, not just a single session or feature.
 
 **Personalization source.** Every AI module's context (§4) is, in practice, largely a scoped slice of the Twin. The Twin is the single place personalization signal accumulates; individual modules do not maintain their own parallel notion of "what this user is like."
-
-**Context provider.** Practically, the Twin exposes a context-retrieval interface that returns only the partitions relevant to a given request (per `CareerOS_Architecture.md` §4.5) — this is what lets the Context Builder (§4) stay precise rather than defaulting to "send everything."
 
 **How every AI module consumes it:** the AI Roadmap Engine, Practice Mode interviews, the Recommendation Engine, and the Chatbot all retrieve Twin context at the point they need it — each requesting only the partitions relevant to their task. Company Mode interviews are the sole architectural exception, by design, to preserve realistic simulation (§7.4).
 
@@ -344,7 +333,7 @@ Every stage in this lifecycle applies uniformly across all five AI-powered modul
 - **Rate limiting.** Provider-level rate limits are respected centrally in the Provider Abstraction layer, not handled inconsistently by each calling module.
 - **Prompt versioning.** The System Context / Constraints / Output Format templates (§5) for each task type are versioned, so a prompt change can be tied to a specific, reviewable revision rather than being an untracked in-place edit.
 - **Explainability.** Structured outputs that involve a judgment (readiness breakdowns, recommendation reasoning, interview feedback) include the reasoning as a first-class structured field, not just a bare score/verdict — so the business logic and the user both have access to *why*, not only *what*.
-- **Confidence awareness.** Where a task's context is sparse (e.g., a user with almost no evidence yet attempting a readiness computation), the AI Roadmap/Readiness-adjacent tasks should reflect that sparsity in their output (e.g., flagging low-confidence areas) rather than presenting a falsely confident result — consistent with the sparse-evidence handling already specified in `CareerOS_Architecture.md` §15.11.
+- **Confidence awareness.** Where a task's context is sparse (e.g., a user with almost no evidence yet attempting a readiness computation), the AI Roadmap/Readiness-adjacent tasks should reflect that sparsity in their output (e.g., flagging low-confidence areas) rather than presenting a falsely confident result — consistent with the sparse-evidence handling already specified in `careeros-ai-architecture.md` §15.11.
 
 ---
 

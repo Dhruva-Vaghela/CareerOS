@@ -1,32 +1,24 @@
-# React + TypeScript + Vite
+# CareerOS Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The CareerOS web application is a React 19, TypeScript, and Vite frontend. It provides public landing, login, registration, and password recovery pages, along with authenticated onboarding, dashboard, and profile pages.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From the repository root, start the frontend only with:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm run dev --workspace=@careeros/web
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite serves the app at `http://localhost:5173`. To run the frontend with its backend services, use `npm run dev` from the repository root. See the root [SetUpGuide.md](../../SetUpGuide.md) for environment configuration and setup instructions.
+
+## Build and lint
+
+Run these commands from the repository root:
+
+```bash
+npm run build --workspace=@careeros/web
+npm run lint --workspace=@careeros/web
+```
+
+The Vite development server proxies configured `/api` and `/api/v1/*` requests to local backend services. The proxy targets are defined in `vite.config.ts`.

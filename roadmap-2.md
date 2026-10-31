@@ -1,6 +1,6 @@
 # CareerOS AI — Project Roadmap
 
-> **Source of truth:** `docs/careeros-ai-architecture.md`
+> **Source of truth:** `careeros-ai-architecture.md`
 >
 > **Supporting repository guidance:** `CLAUDE.md`, `PRODUCT_CONTEXT.md`, `AI_ARCHITECTURE.md`
 >
@@ -8,13 +8,13 @@
 
 ## 1. Roadmap Principles
 
-- Implement the MVP defined by `docs/careeros-ai-architecture.md`.
+- Implement the MVP defined by `careeros-ai-architecture.md`.
 - Preserve documented module boundaries and data ownership.
 - Use event-driven communication between modules for personalization and cross-module updates.
 - Keep the Career Digital Twin as a context aggregation layer, never a business-data owner.
 - Keep deterministic business logic deterministic; use the AI Reasoning Engine only where the architecture calls for AI.
 - Do not implement documented future scope during MVP.
-- Treat `docs/careeros-ai-architecture.md` as the architecture source of truth.
+- Treat `careeros-ai-architecture.md` as the architecture source of truth.
 - If the architecture is silent on an implementation decision, stop and resolve the ambiguity rather than inventing a business rule.
 
 ---
@@ -36,6 +36,10 @@ The architecture defines dependencies between modules. The sequence below follow
   - [x] `services/resume`
   - [x] `services/digital-twin`
   - [x] `services/health-check`
+  - [x] `services/roadmap-engine`
+  - [x] `services/assessment`
+  - [x] `services/projects`
+  - [x] `services/interview`
 - [x] Establish shared packages:
   - [x] `packages/event-bus` (event bus client)
   - [x] `packages/ai-client` (AI reasoning client)
@@ -85,8 +89,8 @@ The architecture defines dependencies between modules. The sequence below follow
 - [x] Publish `goal.created`.
 - [x] Publish `goal.changed`.
 - [x] Enforce user ownership.
-- [x] Add validation and business-rule tests.
-- [x] Add event contract tests.
+- [ ] Add validation and business-rule tests.
+- [ ] Add event contract tests.
 
 **Downstream consumers:** AI Roadmap Engine, Career Readiness Engine, Recommendation Engine, Career Digital Twin.
 
@@ -159,7 +163,7 @@ Architecture requires this flow:
 - [ ] Publish `roadmap.regenerated`.
 - [x] Publish `roadmap.node.completed`.
 - [x] Implement documented roadmap APIs.
-- [x] Add generation, validation, dependency, versioning, event, and API tests.
+- [ ] Add generation, validation, dependency, versioning, event, and API tests.
 - [x] Add frontend roadmap views and customization allowed by the architecture.
 
 ### Phase 6 — Learning Progress Tracking
@@ -208,14 +212,14 @@ Architecture requires this flow:
 
 **Purpose:** Provide practical project work aligned to roadmap modules.
 
-- [ ] Implement Project domain model.
-- [ ] Implement project-to-roadmap-module mapping.
-- [ ] Implement project submission records.
-- [ ] Implement project status lifecycle.
+- [x] Implement Project domain model.
+- [x] Implement project-to-roadmap-module mapping.
+- [x] Implement project submission records.
+- [x] Implement project status lifecycle.
 - [ ] Implement project history.
-- [ ] Publish `project.submitted`.
-- [ ] Keep project completion evidence explicitly non-verified where applicable.
-- [ ] Do not implement AI project evaluation in MVP.
+- [x] Publish `project.submitted`.
+- [x] Keep project completion evidence explicitly non-verified where applicable.
+- [x] Do not implement AI project evaluation in MVP.
 - [ ] Implement project APIs and UI.
 - [ ] Add validation, ownership, event, integration, and browser tests.
 
@@ -227,16 +231,16 @@ Architecture requires this flow:
 
 **Purpose:** Provide topic quizzes and module assessments and produce evidence.
 
-- [ ] Implement Assessment domain model.
-- [ ] Implement Assessment Attempt domain model.
-- [ ] Implement topic quizzes.
-- [ ] Implement module assessments.
-- [ ] Implement question-to-skill mapping.
-- [ ] Implement scoring.
-- [ ] Publish `assessment.scored`.
+- [x] Implement Assessment domain model.
+- [x] Implement Assessment Attempt domain model.
+- [x] Implement topic quizzes.
+- [x] Implement module assessments.
+- [x] Implement question-to-skill mapping.
+- [x] Implement scoring.
+- [x] Publish `assessment.scored`.
 - [ ] Feed assessment evidence to downstream consumers through events.
-- [ ] Do not implement AI-graded open-ended assessment questions in MVP.
-- [ ] Implement APIs and UI.
+- [x] Do not implement AI-graded open-ended assessment questions in MVP.
+- [x] Implement APIs and UI.
 - [ ] Add scoring, security, event, API, and browser tests.
 
 ### Phase 10 — Career Digital Twin
@@ -251,11 +255,11 @@ Architecture requires this flow:
 
 - [x] Identity State
 - [x] Career Goal State
+- [x] Interview State
 - [ ] Skill State
 - [ ] Learning State
 - [ ] Evidence State
 - [ ] Project State
-- [ ] Interview State
 - [ ] Recommendation State
 - [ ] Readiness State
 - [ ] Conversation Metadata
@@ -268,11 +272,11 @@ Architecture requires this flow:
 - [x] Implement context retrieval interface.
 - [x] Implement partition-aware context builder.
 - [x] Implement context serialization/compression/validation.
-- [x] Implement context versioning.
+- [ ] Implement context versioning.
 - [ ] Implement cache/invalidation strategy.
 - [ ] Publish `twin.updated` / `twin.context.updated` where specified.
 - [x] Implement documented context APIs.
-- [x] Add synchronization, partition, versioning, event, and security tests.
+- [ ] Add synchronization, partition, versioning, event, and security tests.
 - [x] Do not add business-data ownership to the Twin.
 
 ### Phase 11 — AI Mock Interview System
@@ -296,11 +300,11 @@ The two MVP modes must remain architecturally independent in their AI-context be
 
 #### Company Mode
 
-- [ ] Implement company simulation inputs.
-- [ ] Keep Twin reads completely out of the interview pipeline.
+- [x] Implement company simulation inputs.
+- [x] Keep Twin reads completely out of the interview pipeline.
 - [ ] Preserve the no-Twin-read invariant with an enforceable dependency check.
-- [ ] Persist interview evidence.
-- [ ] Publish `interview.completed`.
+- [x] Persist interview evidence.
+- [x] Publish `interview.completed`.
 
 **Both modes:**
 
@@ -380,7 +384,7 @@ The two MVP modes must remain architecturally independent in their AI-context be
 
 `Goal set → Roadmap generated → Module completed → Assessment scored → Progress updated → Readiness updated → Recommendation generated`
 
-- [ ] Run the Company Interview no-Twin-read invariant test.
+- [x] Run the Company Interview no-Twin-read invariant test.
 - [ ] Run full unit/integration/contract/browser test suites.
 - [ ] Fix architecture violations and documented defects.
 - [ ] Confirm no undocumented MVP features have been added.

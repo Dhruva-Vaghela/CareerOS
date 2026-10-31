@@ -1,7 +1,7 @@
 # PRODUCT_CONTEXT.md — CareerOS AI Product Reference
 
 **Document type:** Product specification (business logic, feature responsibilities, module interactions, user experience)
-**Not covered here:** software architecture (see `CareerOS_Architecture.md`), engineering workflow (see `CLAUDE.md`), implementation or API detail
+**Not covered here:** software architecture (see `careeros-ai-architecture.md`), engineering workflow (see `CLAUDE.md`), implementation or API detail
 **Audience:** product stakeholders, future developers, and AI coding assistants who need to understand *what the product is and why* before touching *how it's built*
 
 ---
